@@ -1,0 +1,1327 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[usenames,dvipsnames]{xcolor} %monochrome option to ignore red, blue etc
+\usepackage{amsmath,amssymb,graphicx, cancel, supertabular, booktabs, mathtools}
+\usepackage{tikz}
+\usepackage{siunitx, , comment}
+\usepackage[version=4]{mhchem}
+%, stmaryrd}
+\usepackage{bm}         % bold math fonts with \bm{}
+\usepackage[font=small,labelfont=bf]{caption} % Required for specifying captions to tables and figures
+\usepackage{pgfplotstable}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.13}
+%\usepackage{lipsum}
+%\frenchspacing
+% bibliography
+%\usepackage[backend=biber, style=numeric, bibencoding=UTF8]{biblatex}	% style=iso-numeric
+%\bibliography{library.bib} 
+%\journal{}
+% My own styles package...
+%\usepackage{customstyle}
+\usepackage{wrapfig, subcaption, caption}
+\usepackage{xargs}                      % Use more than one optional parameter in a new commands
+\usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
+\newcommandx{\unsure}[2][1=]{\todo[linecolor=red,backgroundcolor=red!25,bordercolor=red,#1]{#2}}
+\newcommandx{\change}[2][1=]{\todo[linecolor=blue,backgroundcolor=blue!25,bordercolor=blue,#1]{#2}}
+\newcommandx{\info}[2][1=]{\todo[linecolor=OliveGreen,backgroundcolor=OliveGreen!25,bordercolor=OliveGreen,#1]{#2}}
+\newcommandx{\improvement}[2][1=]{\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum,#1]{#2}}
+\newcommandx{\thiswillnotshow}[2][1=]{\todo[disable,#1]{#2}}
+
+\numberwithin{equation}{section}
+
+\usepackage[normalem]{ulem}
+\usepackage[draft]{showkeys}
+
+\definecolor{colorRed}{rgb}{0.67,0.,0.}
+\definecolor{colorBlue}{rgb}{0.,0.,0.67}
+
+\newcommand{\BR}{\color{colorRed}}
+\newcommand{\ER}{\color{black}}
+\newcommand{\BB}{\color{colorBlue}}
+\newcommand{\EB}{\color{black}}
+
+%\newcommand{\ara}[1]{\renewcommand{\arraystretch}{#1}}
+\newcommand{\us}[1]{\underset{\textrm{s}}{#1}{}}
+
+\def\tilde{\widetilde}
+\def\cI{\mathcal{I}}
+\def\F{\textrm{F}}
+\def\e{\textrm{e}}
+\def\Ref{\mathit{ref}}
+
+\def\kB{k_\mathrm{B}}
+
+\def\Ox{\mathrm{O}}
+\def\oo{{\ce{O2}}}
+\def\nn{{\ce{N2}}}
+\newcommand{\Omin}{{\ce{O-}}}
+\def\Om{\mathrm{Om}}
+\def\Oi{\mathrm{Oi}}
+\def\Zr{\mathrm{Zr}}
+\def\Yi{\mathrm{Y }}
+\newcommand{\OO}{{\ce{O2}}}
+\newcommand{\dd}{{\mathrm{d}}}
+
+\def\Mp{\mathrm{M^+}}
+\def\eM{\mathrm{e^-}}
+
+
+\def\MLC{M_\mathrm{C}^\mathrm{L}}
+\def\MLA{M_\mathrm{A}^\mathrm{L}}
+\def\nLA{n_\mathrm{A}^\mathrm{L}}
+\def\nLC{n_\mathrm{C}^\mathrm{L}}
+\def\nC{n_\mathrm{C}}
+\def\nG{n^\mathrm{g}}
+\def\nL{n_\mathrm{L}}
+\def\zL{z_\mathrm{L}}
+\def\zA{z_\mathrm{A}}
+\def\mL{m_\mathrm{L}}
+\def\vL{v_\mathrm{L}}
+\def\aL{a_\mathrm{L}}
+
+\def\ys{\us y}
+\newcommand{\ysV}{\us y_{\textrm{V}}}
+\newcommand{\yOmin}{\us y_{\ce{O-}}}
+\def\y0{{y(0)}}
+\def\yOs{{\us y_\textrm{O}}}
+\def\yAs{{\us y}}
+\def\pO2{{p\OO}}
+\def\yB{{y_\text{B}}}
+\def\e{{\textrm{e}^-}}
+
+\def\efac{\zeta}
+\def\OC{\us K_\Ox}
+
+\def\A0{A_0}
+\def\B0{B_0}
+\def\C0{C_0}
+\def\R0{R_0}
+\def\K0{O_0}
+\def\rA{r_\textrm{A}}
+\def\rB{r_\textrm{B}}
+\def\rC{r_\textrm{C}}
+\def\rR{r_\textrm{R}}
+\def\rO{r_\textrm{O}}
+\def\DGA{\Delta G_\textrm{A}  }
+\def\DGB{\Delta G_\textrm{B}  }
+\def\DGC{\Delta G_\textrm{C}  }
+\def\DGR{\Delta G_\textrm{R}  }
+\def\DGO{\Delta G_\textrm{O}  }
+\def\betaA{\beta_\textrm{A}}
+\def\betaB{\beta_\textrm{B}}
+\def\betaC{\beta_\textrm{C}}
+\def\betaR{\beta_\textrm{R}}
+\def\betaO{\beta_\textrm{O}}
+\def\SA{S_\textrm{A}}
+\def\SB{S_\textrm{B}}
+\def\SC{S_\textrm{C}}
+\def\SR{S_\textrm{R}}
+\def\SO{S_\textrm{O}}
+\newcommand{\kaA}{{\kappa_\textrm{A}}}
+\newcommand{\kaB}{{\kappa_\textrm{B}}}
+\newcommand{\kaC}{{\kappa_\textrm{C}}}
+\newcommand{\kaR}{{\kappa_\textrm{R}}}
+\newcommand{\kaO}{{\kappa_\textrm{O}}}
+
+\def\eq{\textrm{eq}}
+\def\REF{\textrm{ref}}
+
+\def \YSZ{\textrm{YSZ}}
+\def \M{\textrm{M}}
+
+\def \yY{y^\YSZ}
+\def \varphiY{\varphi^\YSZ}
+\def \neM{n_\textrm{e}^\M}
+\def \varphiM{\varphi^\M}
+
+\def \yYs{{\us y}^\YSZ}
+\def \neMs{\us \neM}
+
+\def\pD{\tilde{D}}
+\def\PF{P}
+
+
+\def\vau{{\BB\upsilon\EB}}
+
+%
+%Metadata
+\usepackage{hyperref}
+\hypersetup{pdftitle=Yttria-stabilized Zirconia}
+\hypersetup{pdfauthor=Vojtech Milos}
+\begin{document}
+%\begin{frontmatter}
+\author{Vojtěch Miloš, Petr Vágner, Jürgen Fuhrmann}
+\title{Implemented models}
+\maketitle
+%\address{Charles University, Weierstraß Institute}
+%\end{frontmatter}
+
+%\section{YSZ characterization}
+%Exists in different crystalline forms, single crystal and polycrystalline shown in figures %\ref{fig:phase_d},\ref{fig:cryst}.
+%For further details consult \cite{ikeda1985electrical, viazzi2008structural}.
+%%\begin{figure}[h] 
+%%\includegraphics[width=0.5\textwidth]{./img/phase_diagram_Scott.png}
+%%\caption{}
+%%\label{fig:phase_d}
+%%\end{figure}
+%%\begin{figure}[h] 
+%%\includegraphics[width=0.7\textwidth]{./img/YSZ_crystalline_phases.png}
+%%\caption{}
+%%\label{fig:cryst}
+%%\end{figure}
+%\subsection{YSZ thermal expansion}
+%\cite{hayashi2005thermal}
+%Linear thermal expansion coefficient $\frac{\alpha_\textrm{V}}{3} =\alpha_\textrm{L} = \frac{1}{L}\frac{\did L}{\did T} \approx \SI{1e-6}{\per\kelvin}\text{	at }\SI{1000}{\kelvin}$.
+%Grüneisen's constant $\gamma \approx 1.4$, bulk modulus $K_\textrm{T} \approx \SI{205}{\giga\pascal}@\SI{298}{\kelvin}$
+%\subsection{YSZ ionic conductivity}
+%The main factor driving factor is definitely temperature.
+%The other factors steering the YSZ ionic conductivity are the mixing ratio $x$, crystalline structure and atmosphere.
+%\subsubsection{\citeauthor{bauerle1969study}~\cite{bauerle1969study}}
+%
+%\subsubsection{\citeauthor{fergus2006electrolytes}~\cite{fergus2006electrolytes}, review}
+%Conductivity od YSZ increases up to $8$ mole$\%$ and then decreases. The decrease at higher dopant contents might
+%be due to association of point defects, which leads to reduction in defect mobility and thus conductivity.
+%Size mismatch between $\ce{Zr}$ and $\ce{Y}$ leads to lower conductivity greater energy for defect association.
+%
+%Grain boundary conduction is said to be important.
+%\begin{figure}[h]
+%%\includegraphics[width=\linewidth]{./img/recherche/fergus2006_fig2.png}
+%\caption{YSZ conductivities taken from~\cite{fergus2006electrolytes}, 
+%apparently the value is around $\SIF{0.1}{\siemens\per\cm}$ at $\SIF{1000}{\celsius}$. }
+%\end{figure}
+%%
+%\subsubsection{\citeauthor{chen2002influence}~\cite{chen2002influence}, granular polycrystal}
+%Authors use fine-granular 8YSZ, measures EIS at temperature between $\SIF{300}{\celsius}$ and $\SIF{1000}{\celsius}$.
+%Authors distinguish between intra- and intergranular conductivity, which they obtain by fitting EIS to an equivalent circuit.
+%Specimen coated with a platinum paste a connected with platinum wire. Presumably air atmosphere was used.
+%
+%My opinion is that two different spectra are measured at high and low temperatures.
+%Reported total conductivity was around $\SIF{0.1}{\siemens\per\cm}$ at
+%$\SIF{1000}{\celsius}$.
+%\begin{figure}[h]
+%	\centering
+%	%\includegraphics[width=\linewidth]{./img/recherche/chen2002_fig1.png}
+%	\caption{Typical impedance spectra of YSZ at low temperature from \cite{chen2002influence}.}
+%	\label{fig:chen2002}
+%\end{figure}
+%\subsubsection{\citeauthor{zhang2007ionic}~\cite{zhang2007ionic}}
+%\begin{figure}[h]
+%	\centering
+%	%\includegraphics[width=\linewidth]{./img/recherche/zhang2007_fig2.png}
+%	\caption{The equivalent circuit}
+%	\label{fig:zhang2007}
+%\end{figure}
+%\subsubsection{\citeauthor{velle1991electrode}~\cite{velle1991electrode}}
+%
+%%\subsubsection{\citeauthor{manning1997kinetics}~\cite{manning1997kinetics}}
+%Manning used $\langle 100\rangle$ single crystal 9.5YSZ and reported $\SIF{3e-2}{\siemens\per\cm}$ in $\SI{1}{\bar}$ air at $\SIF{800}{\celsius}$
+%and slightly lower values in oxygen-free nitrogen.
+%\vfill\eject
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+\section{Summary of the published model}
+A proper summary of the model is nesseccary for having good time during implementation and during the whole life. 
+
+\subsection{Model with dimensions}
+The finall model equations for a half-cell reads
+
+\begin{subequations}
+\begin{align}
+\partial_t \frac{m_\Ox m (1- \nu)}{\vL} y
++
+\partial_x 
+\left(
+	\left(
+		1
+		+
+		\frac{m_\Ox}{\mL} m (1 - \nu) y
+	\right)
+	\bm J_\Ox
+\right)
+&= 
+0,
+\\
+- \varepsilon_0 (1 + \chi) \partial_{xx} \varphi 
+&= 
+\frac{e_0}{\vL}
+\left(
+	z_\textrm{A} m (1 - \nu) y
+	+
+	\zL
+\right),
+\\
+\bm J_\Ox 
+=
+- \frac{D \ m_\Ox m (1 - \nu)}{\vL}
+\left(
+	1
+	+
+	\frac{m_\Ox}{\mL} m (1 - \nu) y
+\right)
+&\Bigg[
+	\frac	
+	{\partial_x y}
+	{(1- y)}
+	+ 
+	z_\textrm{A} y \frac{e_0}{\kB T}
+	\partial_x \varphi
+\Bigg]
+\end{align}
+\end{subequations}
+for bulk with the choise of mobility coefficient 
+$$M = D \frac{m_\Ox}{\kB} \rho_\Ox = D \frac{m_\Ox^2 m (1 - \nu) y}{\vL \ \kB},$$ 
+where $[D] = m^2 s^{-1}$ is a diffusion coefficient, and
+\begin{subequations}
+\begin{align}
+\partial_t &\frac{m_\Ox \us m (1- \us \nu)}{\aL} \us y
+-
+m_\Ox \us A_0 
+\left(
+	\frac{\DGA}{\kB T}
+	+
+	\ln \frac{y(1- \us y)}{\us y (1- y)}
+\right)
+=
+m_\Ox \us R,
+\\ \nonumber
+\\
+&\us R
+=
+\us R_0
+\Bigg[
+	\textrm{exp}
+	\left(
+		{-\beta A \frac{\DGR}{\kB T}}
+	\right)
+	\left(
+		\frac{\us y}{1- \us y}
+	\right)^{-\beta A}
+	{p_\Ox}^{\frac{\beta A}{2}}
+\\ \nonumber
+	&\quad \quad \quad \quad \quad \quad	
+	-
+	\textrm{exp}
+	\left(
+		{(1-\beta) A \frac{\DGR}{\kB T}}
+	\right)
+	\left(
+		\frac{\us y}{1- \us y}
+	\right)^{(1-\beta) A}
+	{p_\Ox}^{-\frac{(1-\beta) A}{2}}
+\Bigg],
+\end{align}
+\end{subequations}
+for surface with the choice of adsorbtion coefficient
+$$
+\us M = \us A_0  \frac{m_\Ox^2}{\kB},
+$$
+where $[\us A_0] = \textrm{m}^{-2} \textrm{s}^{-1}$ denotes the rate of adsorbtion. The electrochemical reaction is supposed to be
+\begin{align}
+\ce{\frac{1}{2} \Ox_2 + 2\textrm{e}^- <=> \Ox^{2-}}
+\end{align}
+and we define
+\begin{subequations}
+\begin{align}
+\DGA
+&=
+m_\Ox
+\left(
+	\psi_{\textrm{Om}}^\REF
+	-
+	\us \psi_{\textrm{Om}}^\REF
+\right)
+\\
+\DGR
+&= 
+m_\Ox
+\left(
+	\us \psi_{\textrm{Om}}^\REF
+	-
+	\frac{\us \psi_{\Ox}^\REF}{2}
+\right)
+-
+2 m_\textrm{e} \psi_{\textrm{e}}^\REF.
+\end{align}
+\end{subequations}
+
+
+
+
+\section{Other variants}
+Only regarding surface:
+
+\newcommand{\surf}{\mathrm{s}}
+\newcommand{\Y}{\mathrm{Y}}
+\newcommand{\gas}{\mathrm{g}}
+\subsection{model\_ysz\_GAS\_exp\_ads}
+Model including adsorption of oxygen \ce{O2(g)} from gas to the surface. All kinetics are exponential-like. The complete reaction mechanism reads
+\begin{subequations}
+\begin{align}
+\mathrm{Oxide \ anion \ adorption \ from \ YSZ} \ (A) &: \quad 
+\ce{\Ox^{2-}(\Y) <=> \Ox^{2-}(\surf)}
+\\
+\mathrm{Electron \ transfer \ reaction}\ (R) &: \quad 
+\ce{\textrm{O}(\surf) +  2\textrm{e}^-(\surf) <=> \Ox^{2-}(\surf)}
+\\
+\mathrm{Oxygen \ adorption \ from \ gas}\  (O) &: \quad 
+\ce{\Ox_2({\gas}) <=> 2 \Ox(\surf)}
+\\
+\end{align}
+\end{subequations}
+
+Chemical potentials reads
+\begin{subequations}
+\begin{align}
+\mu_{\OO} &= \psi_{\OO}^\REF + \frac{\kB T}{2 m_\Ox}\ln 
+\left( 
+    \frac{\pO2}{p^\REF} 
+\right)
+\\
+\mu_{\us \Ox} 
+&= 
+\us \psi_{\Ox}^\REF 
++ 
+\frac{\kB T}{m_\Ox} \ln 
+\left(  
+	\frac{\yOs}{1-\yOs}
+\right).
+\end{align}
+\end{subequations}
+
+The surface system reads
+\begin{subequations}
+\begin{align}
+\partial_t \frac{m_\Ox \us m (1- \us \nu)}{\aL} \ys
+&=
+m_\Ox \us A
++
+m_\Ox \us R,
+\\
+\partial_t \frac{m_\Ox}{4 \aL} \yOs
+&=
+2 m_\Ox \us O
+-
+m_\Ox \us R,
+\end{align}
+\end{subequations}
+with
+\begin{subequations}
+\begin{align}
+&\us A
+=
+\frac{\A0}{\SA}
+\Bigg[
+	\textrm{exp}
+	\left(
+		{-\betaA \SA \frac{\DGA}{\kB T}}
+	\right)
+	\left(
+		\frac{1 - \y0}{\y0}
+		\frac{\ys}{1-\ys}
+	\right)^{-\betaA \SA}
+\\ \nonumber
+	&\quad \quad \quad \quad	
+	-
+	\textrm{exp}
+	\left(
+		{(1-\betaA) \SA \frac{\DGA}{\kB T}}
+	\right)
+	\left(
+		\frac{1 - \y0}{\y0}
+		\frac{\ys}{1-\ys}
+	\right)^{(1-\betaA) \SA}
+\Bigg],
+\\ \nonumber
+\\
+&\us R
+=
+\frac{\R0}{\SR}
+\Bigg[
+	\textrm{exp}
+	\left(
+		{-\betaR \SR \frac{\DGR}{\kB T}}
+	\right)
+	\left(
+		\frac{\ys}{1- \ys}
+		\frac{1-\yOs}{\yOs}
+	\right)^{-\betaR \SR}
+\\ \nonumber
+	& \quad \quad \quad \quad	
+	-
+	\textrm{exp}
+	\left(
+		{(1 - \betaR) \SR \frac{\DGR}{\kB T}}
+	\right)
+	\left(
+		\frac{\ys}{1- \ys}
+		\frac{1-\yOs}{\yOs}
+	\right)^{(1-\betaR) \SR}
+\Bigg],
+\\ \nonumber
+\\
+&\us O
+=
+\frac{\K0}{\SO}
+\Bigg[
+	\textrm{exp}
+	\left(
+		{-\betaO \SO \frac{\DGO}{\kB T}}
+	\right)
+	\left(
+		\left(
+			\frac{\yOs}{1-\yOs}
+		\right)^2
+		\frac{1}{\pO2}
+	\right)^{-\betaO \SO}
+\\ \nonumber
+	&\quad \quad \quad \quad	
+	-
+	\textrm{exp}
+	\left(
+		{(1-\betaO) \SO \frac{\DGO}{\kB T}}
+	\right)
+	\left(
+		\left(
+			\frac{\yOs}{1-\yOs}
+		\right)^2
+		\frac{1}{\pO2}
+	\right)^{(1 - \betaO) \SO}
+\Bigg],
+\end{align}
+\end{subequations}
+and we define
+\begin{subequations}
+\begin{align}
+\DGA
+&=
+m_\Ox
+\left(
+	\psi_{\textrm{Om}}^\REF
+	-
+	\us \psi_{\textrm{Om}}^\REF
+\right)
+\\
+\DGR
+&= 
+m_\Ox
+\left(
+	\us \psi_{\textrm{Om}}^\REF
+	-
+	\frac{\us \psi_{\Ox}^\REF}{2}
+\right)
+-
+2 m_\textrm{e} \psi_{\textrm{e}}^\REF.
+\\
+\DGO
+&= 
+m_\Ox
+\left(
+	\us \psi_{\Ox}^\REF
+	-
+	2 \psi_{\OO}^\REF
+\right).
+\end{align}
+\end{subequations}
+The equilibrium condition is
+\begin{subequations}
+\begin{align}
+\frac{\y0^\eq}{1-\y0^\eq} = \sqrt{\pO2} \ \textrm{exp}
+\left(
+	\frac{\DGA - \DGR - \frac{\DGO}{2}}{\kB T}
+\right).
+\end{align}
+\end{subequations}
+
+\subsection{model\_ysz\_GAS\_LoMA\_shared}
+Model including adsorption of oxygen \ce{O2(g)} from gas to the surface, overvoltage feature and switch between separate or shared vacancies for surface species. There are two kinetics templates: exponential (EXP) and law of mass action (LoMA). The complete reaction mechanism reads
+\begin{subequations}
+\begin{align}
+\mathrm{Oxide \ anion \ adorption \ from \ YSZ} \ (A) &: \quad 
+\ce{\Ox^{2-}(\Y) <=> \Ox^{2-}(\surf)}
+\\
+\mathrm{Electron \ transfer \ reaction}\ (R) &: \quad 
+\ce{\textrm{O}(\surf) +  2\textrm{e}^-(\surf) <=> \Ox^{2-}(\surf)}
+\\
+\mathrm{Oxygen \ adorption \ from \ gas}\  (O) &: \quad 
+\ce{\Ox_2({\gas}) <=> 2 \Ox(\surf)}
+\end{align} \label{eq:LoMA_shared_mechanism}
+\end{subequations}
+
+Chemical potentials differs for separate (SEP) and shared (SHA) vacancies. Electron potential includes a coefficient of overvoltage influence $\efac$.
+\begin{subequations}
+\begin{align}
+\mu_{\OO} &= \psi_{\OO}^\REF + \frac{\kB T}{2 m_\Ox}\ln 
+\left( 
+    \frac{\pO2}{p^\REF} 
+\right),
+\\
+\us \mu_{\Om} 
+&= 
+\us \psi_{\Om}^\REF 
++ 
+\frac{\kB T}{m_\Ox} \ln a,
+\quad
+a^{\textrm{SEP}} = \frac{\yAs}{1-\yAs},
+\quad
+a^{\textrm{SHA}} = \frac{\yAs}{1- \yOs - \yAs},
+\\
+\us \mu_{\Ox} 
+&= 
+\us \psi_{\Ox}^\REF 
++ 
+\frac{\kB T}{m_\Ox} \ln a,
+\quad
+a^{\textrm{SEP}} = \frac{\yOs}{1-\yOs},
+\quad
+a^{\textrm{SHA}} = \frac{\yOs}{1- \yOs - \yAs},
+\\
+\us \mu_{\e} 
+&=
+\us \psi_{\e}^\REF
++
+\efac z_\e \text{e}_0 \eta. \label{eq:overvoltage_intro}
+\end{align}
+\end{subequations}
+
+The surface system with oxygen vacancy occurence coefficient $\OC$ reads
+\begin{subequations}
+\begin{align}
+\partial_t \frac{m_\Ox \us m (1- \us \nu)}{\aL} \ys
+&=
+m_\Ox \us A
++
+m_\Ox \us R,
+\\
+\partial_t \frac{m_\Ox \OC }{\aL} \yOs
+&=
+2 m_\Ox \us O
+-
+m_\Ox \us R,
+\end{align}
+\end{subequations}
+where the reaction rates incorporates activities of involved species and can take two different forms. Firstly, exponential (EXP) form is pretty straighforward and uses the activities in each reaction (without vacancies) described in (\ref{eq:LoMA_shared_mechanism}). Secondly, the law of mass action (LoMA) kinetics is listed below for shared vacancy case. Note there is also included the overvoltage feature introduced in (\ref{eq:overvoltage_intro}) for electron transfer reaction $R$.
+\begin{subequations}
+\begin{align}
+&\us A
+=
+\frac{\rA}{\SA}
+\left[
+    y(0) (1-y(0)) \ys \ysV  
+\right]^\kaA
+\Bigg[
+	\exp
+	\left(
+		{-\betaA \SA \frac{\DGA}{\kB T}}
+	\right)
+	\left(
+		\frac{\y0}{1 - \y0}
+		\frac{\ys}{\ysV}
+	\right)^{-\betaA \SA}
+\\ \nonumber
+	&\quad \quad \quad \quad	
+	-
+	\exp
+	\left(
+		{(1-\betaA) \SA \frac{\DGA}{\kB T}}
+	\right)
+	\left(
+		\frac{\y0}{1 - \y0 }
+		\frac{\ys}{\ysV}
+	\right)^{(1-\betaA) \SA}
+\Bigg],
+\\ \nonumber
+\\
+&\us R
+=
+\frac{\rR}{\SR}
+\left[
+  \ys \yOs 
+\right]^\kaR
+\Bigg[
+	\exp
+	\left(
+		{-\betaR \SR \frac{\DGR + \efac 2 \text{e}_0 \eta}{\kB T}}
+	\right)
+	\left(
+		\frac{\ys}{\yOs}
+	\right)^{-\betaR \SR}
+\\ \nonumber
+	& \quad \quad \quad \quad	
+	-
+	\exp
+	\left(
+		{(1 - \betaR) \SR \frac{\DGR + \efac 2 \text{e}_0 \eta}{\kB T}}
+	\right)
+	\left(
+		\frac{\ys}{\yOs}
+	\right)^{(1-\betaR) \SR}
+\Bigg],
+\\ \nonumber
+\\
+&\us O
+=
+\frac{\rO}{\SO}
+\left[
+    \yOs^2 \ysV^2 \frac{p_\OO}{p^\REF}
+\right]^\kaO
+\Bigg[
+	\exp
+	\left(
+		{-\betaO \SO \frac{\DGO}{\kB T}}
+	\right)
+	\left(
+		\left(
+			\frac{\yOs}{\ysV}
+		\right)^2
+   \frac{p^\REF}{p_\OO}
+	\right)^{-\betaO \SO}
+\\ \nonumber
+	&\quad \quad \quad \quad	
+	-
+	\exp
+	\left(
+		{(1-\betaO) \SO \frac{\DGO}{\kB T}}
+	\right)
+	\left(
+		\left(
+			\frac{\yOs}{\ysV}
+		\right)^2
+    \frac{p^\REF}{p_\OO}
+	\right)^{(1 - \betaO) \SO}
+\Bigg],
+\end{align}
+\end{subequations}
+where shared vacancy concentration reads 
+$$ \ysV = \frac{1}{1 - \yAs - \yOs}$$
+\begin{subequations}
+
+\end{subequations}
+and we define
+\begin{subequations}
+\begin{align}
+\DGA
+&=
+m_\Ox
+\left(
+	\psi_{\textrm{Om}}^\REF
+	-
+	\us \psi_{\textrm{Om}}^\REF
+\right)
+\\
+\DGR
+&= 
+m_\Ox
+\left(
+	\us \psi_{\textrm{Om}}^\REF
+	-
+	\us \psi_{\Ox}^\REF
+\right)
+-
+2 m_\textrm{e} \psi_{\textrm{e}}^\REF.
+\\
+\DGO
+&= 
+m_\Ox
+\left(
+	\us \psi_{\Ox}^\REF
+	-
+	2 \psi_{\OO}^\REF
+\right).
+\end{align}
+\end{subequations}
+The equilibrium activities are
+\begin{subequations}
+\begin{align}
+a_{y(0)}^\eq 
+&= 
+a_\yAs^\eq  \text{exp}
+\left(
+	\frac{\DGA}{\kB T}
+\right),
+\\
+a_\yAs^\eq 
+&= 
+a_\yOs^\eq \ \text{exp}
+\left(
+	\frac{\DGR + \efac 2 \text{e}_0 \varphi^\eq}{\kB T}
+\right),
+\\
+a_\yOs^\eq 
+&= 
+\sqrt{a_{p\OO}^\eq} \ \text{exp}
+\left(
+	\frac{\DGO}{2 \kB T}
+\right),
+\\
+a_{\yB}^\eq
+&=
+a_{y(0)}^\eq \ \text{exp}
+\left(
+	\frac{z_\text{A} \text{e}_0 \varphi^\eq}{\kB T}
+\right),
+\end{align}
+\end{subequations}
+therefore the OCV potential reads
+\begin{subequations}
+\begin{align}
+\varphi^\eq 
+= 
+\frac{
+	\kB T 
+	\left(
+		\ln a_\yB^\eq
+		-
+		\ln \sqrt{a_\pO2^\eq} 
+	\right)
+	- 
+	\frac{\DGO}{2}
+	-
+	\DGR
+	-
+	\DGA
+}{
+	(2 \efac + 2) \text{e}_0
+}.
+\end{align}
+\end{subequations}
+
+
+\subsection{\texttt{model\_ysz\_shared\_vac.jl}}
+Free energy density
+\begin{align}
+    \us\rho\psi = 
+              \rho\psi^\REF_\Om
+            + \rho\psi^\REF_\OO
+            + \rho\psi^\REF_\eM
+            + \frac{\kB T}{\aL}\us m(1-\us\nu) 
+            \left( 
+                \ys   \log {\ys} 
+                +\yOs  \log {\yOs}
+                +\ysV  \log {\ysV}
+            \right)
+    \label{}
+\end{align}
+where $\ysV = 1 - \ys - \yOs$.
+Chemical potentials read
+\begin{subequations}
+\begin{align}
+\mu_{\OO} &= \psi_{\OO}^\REF + \frac{\kB T}{2 m_\Ox}\ln 
+\left( 
+    \frac{p_\OO}{p^\REF} 
+\right)~,
+\\
+\us\mu_{\Om} 
+&= 
+\us \psi_{\Om}^\REF 
++ 
+\frac{\kB T}{m_\Ox} \ln 
+\left(  
+	\frac{\ys}{1-\ys - \yOs}
+\right)~,
+\\
+\us\mu_{\Ox} 
+&= 
+\us \psi_{\Ox}^\REF 
++ 
+\frac{\kB T}{m_\Ox} \ln 
+\left(  
+	\frac{\yOs}{1-\ys - \yOs}
+\right).
+\end{align}
+\end{subequations}
+The surface system reads
+\begin{subequations}
+\begin{align}
+ \frac{m_\Ox \us m (1- \us \nu)}{\aL}\partial_t \ys
+&=
+m_\Ox \us A
++
+m_\Ox \us R~,
+\\
+ \frac{m_\Ox \us m (1- \us \nu)}{\aL}\partial_t \yOs
+&=
+2 m_\Ox \us O
+-
+m_\Ox \us R,
+\end{align}
+\end{subequations}
+with
+\begin{subequations}
+\begin{align}
+&\us A
+=
+\frac{\A0}{\SA}
+\Bigg[
+	\exp
+	\left(
+		{-\betaA \SA \frac{\DGA}{\kB T}}
+	\right)
+	\left(
+		\frac{1 - \y0}{\y0}
+		\frac{\ys}{1-\ys -\yOs}
+	\right)^{-\betaA \SA}
+\\ \nonumber
+	&\quad \quad \quad \quad	
+	-
+	\exp
+	\left(
+		{(1-\betaA) \SA \frac{\DGA}{\kB T}}
+	\right)
+	\left(
+		\frac{1 - \y0 }{\y0}
+		\frac{\ys}{1-\ys-\yOs}
+	\right)^{(1-\betaA) \SA}
+\Bigg],
+\\ \nonumber
+\\
+&\us R
+=
+\frac{\R0}{\SR}
+\Bigg[
+	\exp
+	\left(
+		{-\betaR \SR \frac{\DGR}{\kB T}}
+	\right)
+	\left(
+		\frac{\ys}{1- \ys - \yOs}
+		\frac{1 -\ys -\yOs}{\yOs}
+	\right)^{-\betaR \SR}
+\\ \nonumber
+	& \quad \quad \quad \quad	
+	-
+	\exp
+	\left(
+		{(1 - \betaR) \SR \frac{\DGR}{\kB T}}
+	\right)
+	\left(
+		\frac{\ys}{1- \ys - \yOs}
+		\frac{1-\yOs - \ys}{\yOs}
+	\right)^{(1-\betaR) \SR}
+\Bigg],
+\\ \nonumber
+\\
+&\us O
+=
+\frac{\K0}{\SO}
+\Bigg[
+	\exp
+	\left(
+		{-\betaO \SO \frac{\DGO}{\kB T}}
+	\right)
+	\left(
+		\left(
+			\frac{\yOs}{1-\ys-\yOs}
+		\right)^2
+		\frac{1}{\pO2}
+	\right)^{-\betaO \SO}
+\\ \nonumber
+	&\quad \quad \quad \quad	
+	-
+	\exp
+	\left(
+		{(1-\betaO) \SO \frac{\DGO}{\kB T}}
+	\right)
+	\left(
+		\left(
+			\frac{\yOs}{1-\ys-\yOs}
+		\right)^2
+		\frac{1}{\pO2}
+	\right)^{(1 - \betaO) \SO}
+\Bigg],
+\end{align}
+\end{subequations}
+and we define
+\begin{subequations}
+\begin{align}
+\DGA
+&=
+m_\Ox
+\left(
+	\psi_{\textrm{Om}}^\REF
+	-
+	\us \psi_{\textrm{Om}}^\REF
+\right)
+\\
+\DGR
+&= 
+m_\Ox
+\left(
+	\us \psi_{\textrm{Om}}^\REF
+	-
+	\frac{\us \psi_{\Ox}^\REF}{2}
+\right)
+-
+2 m_\textrm{e} \psi_{\textrm{e}}^\REF.
+\\
+\DGO
+&= 
+m_\Ox
+\left(
+	\us \psi_{\Ox}^\REF
+	-
+	2 \psi_{\OO}^\REF
+\right).
+\end{align}
+\end{subequations}
+The equilibrium condition is
+\begin{subequations}
+\begin{align}
+\frac{\y0^\eq}{1-\y0^\eq} = \sqrt{\pO2} \ \textrm{exp}
+\left(
+	\frac{\DGA - \DGR - \frac{\DGO}{2}}{\kB T}
+\right).
+\end{align}
+\end{subequations}
+
+\subsection{\texttt{model\_ysz\_shared\_vac\_twostep.jl}}
+\begin{subequations}
+ \begin{align}
+\text{Oxide anion adsorption from YSZ (\textbf{A})}  \ &: \quad 
+\ce{O^{2-}(s) + (b) <=> O^{2-}(b) + (s)}
+\\
+\text{Electron transfer reaction (\textbf{R})}   &: \quad 
+\ce{O(s) +  2e^-(s) <=> O^{2-}(s)}
+\\
+\text{Electron transfer reaction (\textbf{B})}   &: \quad 
+\ce{O(s) +  e^-(s) <=> O^{-}(s)}
+\\
+\text{Electron transfer reaction (\textbf{C})}  &: \quad 
+\ce{O^-(s) +  e^-(s) <=> O^{2-}(s)}
+\\
+\text{Oxygen adsorption from gas (\textbf{O})}   &: \quad 
+\ce{O2(g) + 2(s) <=> 2O(s)}
+\end{align}
+\end{subequations}
+Free energy density
+\begin{align}
+    \us\rho\psi &= 
+              \rho\psi^\REF_\Om
+            + \rho\psi^\REF_\Omin
+            + \rho\psi^\REF_\OO
+            + \rho\psi^\REF_\eM\nonumber
+            \\
+            &+ \frac{\kB T}{\aL}\us m(1-\us\nu) 
+            \left( 
+                \ys   \log {\ys} 
+                +\yOs  \log {\yOs}
+                +\yOmin  \log {\yOmin}
+                +\ysV  \log {\ysV}
+            \right)
+    \label{}
+\end{align}
+where $\ysV = 1 - \ys - \yOs - \yOmin$.
+Chemical potentials read
+\begin{subequations}
+\begin{align}
+\mu_{\OO} &= \psi_{\OO}^\REF + \frac{\kB T}{2 m_\Ox}\ln 
+\left( 
+    \frac{p_\OO}{p^\REF} 
+\right)~,
+\\
+\us\mu_{\Om} 
+&= 
+\us \psi_{\Om}^\REF 
++ 
+\frac{\kB T}{m_\Ox} \ln 
+\left(  
+	\frac{\ys}{1-\ys - \yOs- \yOmin}
+\right)~,
+\\
+\us\mu_{\Omin} 
+&= 
+\us \psi_{\Omin}^\REF 
++ 
+\frac{\kB T}{m_\Ox} \ln 
+\left(  
+	\frac{\yOmin}{1-\ys - \yOs - \yOmin}
+\right)~,
+\\
+\us\mu_{\Ox} 
+&= 
+\us \psi_{\Ox}^\REF 
++ 
+\frac{\kB T}{m_\Ox} \ln 
+\left(  
+	\frac{\yOs}{1-\ys - \yOs- \yOmin}
+\right).
+\end{align}
+\end{subequations}
+The surface system reads
+\begin{subequations}
+\begin{align}
+ \frac{m_\Ox \us m (1- \us \nu)}{\aL}\partial_t \ys
+&=
+m_\Ox
+\left(
+    - \us A
+    +\us R
+    +\us C
+\right)~,
+\\
+ \frac{m_\Ox \us m (1- \us \nu)}{\aL}\partial_t \yOs
+&=
+m_\Ox
+\left(
+      \us O
+     -\us R 
+     -\us B
+\right)~,
+\\
+\frac{m_\Ox \us m (1- \us \nu)}{\aL}\partial_t \yOmin
+&=
+m_\Ox 
+\left(
+    \us B 
+   -\us C
+\right)~,
+\end{align}
+\end{subequations}
+with
+\begin{subequations}
+\begin{align}
+&\us A
+=
+\frac{\A0}{\SA}
+\left[
+    y(0) (1-y(0)) \ys \ysV  
+\right]^\kaA
+\Bigg[
+	\exp
+	\left(
+		{-\betaA \SA \frac{\DGA}{\kB T}}
+	\right)
+	\left(
+		\frac{\y0}{1 - \y0}
+		\frac{\ys}{\ysV}
+	\right)^{-\betaA \SA}
+\\ \nonumber
+	&\quad \quad \quad \quad	
+	-
+	\exp
+	\left(
+		{(1-\betaA) \SA \frac{\DGA}{\kB T}}
+	\right)
+	\left(
+		\frac{\y0}{1 - \y0 }
+		\frac{\ys}{\ysV}
+	\right)^{(1-\betaA) \SA}
+\Bigg],
+\\ \nonumber
+\\
+&\us R
+=
+\frac{\R0}{\SR}
+\left[
+  \ys \yOs 
+\right]^\kaR
+\Bigg[
+	\exp
+	\left(
+		{-\betaR \SR \frac{\DGR}{\kB T}}
+	\right)
+	\left(
+		\frac{\ys}{\yOs}
+	\right)^{-\betaR \SR}
+\\ \nonumber
+	& \quad \quad \quad \quad	
+	-
+	\exp
+	\left(
+		{(1 - \betaR) \SR \frac{\DGR}{\kB T}}
+	\right)
+	\left(
+		\frac{\ys}{\yOs}
+	\right)^{(1-\betaR) \SR}
+\Bigg],
+\\ \nonumber
+\\
+&\us B
+=
+\frac{\B0}{\SB}
+\left[
+  \yOmin \yOs 
+\right]^\kaB
+\Bigg[
+	\exp
+	\left(
+		{-\betaB \SB \frac{\DGB}{\kB T}}
+	\right)
+	\left(
+		\frac{\yOmin}{\yOs}
+	\right)^{-\betaB \SB}
+\\ \nonumber
+	& \quad \quad \quad \quad	
+	-
+	\exp
+	\left(
+		{(1 - \betaB) \SB \frac{\DGB}{\kB T}}
+	\right)
+	\left(
+		\frac{\yOmin}{\yOs}
+	\right)^{(1-\betaB) \SB}
+\Bigg],
+\\ \nonumber
+\\
+&\us C
+=
+\frac{\C0}{\SC}
+\left[
+  \yOmin \ys 
+\right]^\kaC
+\Bigg[
+	\exp
+	\left(
+		{-\betaC \SC \frac{\DGC}{\kB T}}
+	\right)
+	\left(
+		\frac{\ys}{\yOmin}
+	\right)^{-\betaC \SC}
+\\ \nonumber
+	& \quad \quad \quad \quad	
+	-
+	\exp
+	\left(
+		{(1 - \betaC) \SC \frac{\DGC}{\kB T}}
+	\right)
+	\left(
+		\frac{\ys}{\yOmin}
+	\right)^{(1-\betaC) \SC}
+\Bigg],
+\\ \nonumber
+\\
+&\us O
+=
+\frac{\K0}{\SO}
+\left[
+    \yOs^2 \ysV^2 \frac{p_\OO}{p^\REF}
+\right]^\kaO
+\Bigg[
+	\exp
+	\left(
+		{-\betaO \SO \frac{\DGO}{\kB T}}
+	\right)
+	\left(
+		\left(
+			\frac{\yOs}{\ysV}
+		\right)^2
+   \frac{p^\REF}{p_\OO}
+	\right)^{-\betaO \SO}
+\\ \nonumber
+	&\quad \quad \quad \quad	
+	-
+	\exp
+	\left(
+		{(1-\betaO) \SO \frac{\DGO}{\kB T}}
+	\right)
+	\left(
+		\left(
+			\frac{\yOs}{\ysV}
+		\right)^2
+    \frac{p^\REF}{p_\OO}
+	\right)^{(1 - \betaO) \SO}
+\Bigg],
+\end{align}
+\end{subequations}
+and we define
+\begin{subequations}
+\begin{align}
+\DGA
+&=
+m_\Ox
+\left(
+	\psi_{\textrm{Om}}^\REF
+	-
+	\us \psi_{\textrm{Om}}^\REF
+\right)
+\\
+\DGR
+&= 
+m_\Ox
+\left(
+	\us \psi_\Om^\REF
+	-
+	\us \psi_\Ox^\REF
+\right)
+-
+2m_\eM \psi_\eM^\REF= \DGB + \DGC~,
+\\\DGB
+&= 
+m_\Ox
+\left(
+	\us \psi_\Omin^\REF
+	-
+	\us \psi_\Ox^\REF
+\right)
+-
+m_\eM \psi_\eM^\REF~,
+\\
+\DGC
+&= 
+m_\Ox
+\left(
+	\us \psi_\Om^\REF
+	-
+	\us \psi_\Omin^\REF
+\right)
+-
+m_\eM \psi_\eM^\REF~,
+\\
+\DGO
+&= 
+m_\Ox
+\left(
+	\us \psi_{\Ox}^\REF
+	-
+	2 \psi_{\OO}^\REF
+\right).
+\end{align}
+\end{subequations}
+The equilibrium condition is
+\begin{subequations}
+\begin{align}
+    \frac{\y0^\eq}{1-\y0^\eq} = \sqrt{\frac{p_\OO}{p^\REF}} \exp
+\left(
+	\frac{-\DGA - \DGB - \DGC - \frac{\DGO}{2}}{\kB T}
+\right)~.
+\end{align}
+\end{subequations}
+
+The current formula updates to
+\begin{align}
+    \frac{I}{A} &= - e_0  z_\Om \underbrace{\us A}_{\mathclap{\mathbf{j}_\Om\nu|_S}}
+                     - \int_S^B \frac{\dd}{\dd t} n^F
+                     +\varepsilon\frac{\dd}{\dd t}\nabla\varphi\nu|_B 
+    \label{}
+\end{align}
+\subsection{Law of Mass Action}
+Is it possible to express the vacancy coverage in terms of activities $a_\alpha$?
+Assume
+\begin{align}
+    \mu_\alpha = \mu_\alpha^\REF + \kB T\underbrace{
+      \ln \frac{\us y_\alpha}
+               {\underbrace{1-\sum_\beta \us y_\beta}_{=:\ysV}}
+    }_{\ln a_\alpha}
+    \label{}
+\end{align}
+then
+\begin{align}
+    \sum_\alpha a_\alpha = \frac{1-\ysV}{\ysV} \implies \ysV = \frac{1}{1 + \sum_\alpha a_\alpha}~.
+    \label{}
+\end{align}
+hence
+\begin{align}
+    \us y_\alpha = \frac{a_\alpha}{1+ \sum_\beta a_\beta}\quad\mbox{and}\quad 1-\ysV = \frac{\sum_\alpha a_\alpha}{1+ \sum_\alpha a_\alpha}
+    \label{}
+\end{align}
+Especially, for the bulk case
+\begin{align}
+    y(0) = \frac{\frac{y(0)}{1-y(0)}}{1+\frac{y(0)}{1-y(0)}} \quad\mbox{and}\quad    1-y(0) = \frac{1}{1+\frac{y(0)}{1-y(0)}}
+    \label{}
+    \end{align}
+
+\end{document}

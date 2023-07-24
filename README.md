@@ -18,7 +18,7 @@ A toolkit for processing electrochemistry data or running FVM simulations using 
 - numerical simulation (using the defined model) of 
   - EIS (using linearization and Fourier transformation), 
   - CV (Cyclic Voltammetry)
-  - Capacitance measurement of a blocking electrode regime
+  - differential capacitance measurement of a blocking electrode regime
   - ... more custom made experiments
 - running large numerical parametric studies using personal notebook or a computional cluster
   
