@@ -805,7 +805,7 @@ function run_EEC_fitting(;
                         with_errors=false, which_initial_guess="both",
                         use_DRT=false, DRT_draw_semicircles=false,
                         trim_inductance=false,
-                        save_file_bool=true, save_to_folder="../data/EEC/", file_name="default_output.txt", save_R1_file=false,
+                        save_file_bool=true, save_to_folder="data/EEC/", file_name="default_output.txt", save_R1_file=false,
                         print_headers_bool=false,
                         EIS_preprocessing_control = EIS_preprocessing_control()
 #                           ,EIS_preprocessing_control = ElChemTools.EIS_preprocessing_control(
@@ -1366,7 +1366,12 @@ function plot_EEC_data_general(EEC_data_holder;
     else
       bias_step = 666
     end
-    bias_aux_string = (length(THE_list) < 8 ? THE_list : "collect($(THE_list[1]) : $(bias_step) : $(THE_list[end]))")    
+    bias_aux_string = (length(THE_list) < 8 ? THE_list : "collect($(THE_list[1]) : $(bias_step) : $(THE_list[end]))")
+    @show EEC_data_holder.TC[range_list[1]]
+    @show range_list[2]
+    @show EEC_data_holder.pO2[range_list[2]]
+    @show bias_aux_string
+    @show EEC_data_holder.data_set[range_list[4]]
     title("TC=$(EEC_data_holder.TC[range_list[1]])    pO2=$(EEC_data_holder.pO2[range_list[2]])\nbias=$(bias_aux_string)    data_set=$(EEC_data_holder.data_set[range_list[4]]) ", fontsize=10)
     
 #     title("TC=$(EEC_data_holder.TC[range_list[1]])    pO2=$(EEC_data_holder.pO2[range_list[2]])\nbias=$(bias_aux_string)    data_set=$(EEC_data_holder.data_set[range_list[4]]) ", fontsize=10)
