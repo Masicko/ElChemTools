@@ -147,8 +147,6 @@ end
 
 function get_EIS_from_EEC(EEC_actual::EEC_data_struct; f_range=[])
   EIS_out = DataFrame( f = [], Z = [])
-  #@show EEC_actual.prms_names
-  #@show EEC_actual.prms_values
   for f in f_range
     push!(
       EIS_out, 
@@ -1047,10 +1045,12 @@ function run_EEC_fitting(;
         
         EEC_find_fit!(EEC_actual, EIS_exp, mask=mask, alpha_low=alpha_low, alpha_upp=alpha_upp, with_errors=with_errors, error_type=error_type)
         
+        
         HF_LF_correction!(EEC_actual)        
         
         EIS_EEC = get_EIS_from_EEC(EEC_actual, f_range=EIS_exp.f)
         actual_error = fitnessFunction(EIS_simulation(), EIS_EEC, EIS_exp, error_type=error_type)
+        
         if actual_error < best_error
           best_error = actual_error
           best_prms_values = deepcopy(EEC_actual.prms_values)
@@ -1075,6 +1075,8 @@ function run_EEC_fitting(;
         end
     end
     
+    
+
     if save_file_bool
       ProgressMeter.update!(progress_meter, cycle_number_for_progressbar)
     end    
@@ -1102,12 +1104,17 @@ function run_EEC_fitting(;
       EIS_EEC_pre = get_EIS_from_EEC(EEC_actual, f_range=EIS_exp.f)
       plot_bool && ElChemTools.typical_plot_sim(SIM, EIS_EEC_pre, "!EEC best initial guess")
     end
+
+    
     
     EEC_actual.prms_values = deepcopy(best_prms_values)
     EIS_EEC = get_EIS_from_EEC(EEC_actual, f_range=EIS_exp.f)
     actual_error = best_error
-    EEC_actual.prms_values[end] = best_error
+    if EEC_structure != "R+Rpol"
+      EEC_actual.prms_values[end] = best_error
+    end
 
+    
     
     if plot_fit
       plot_bool && ElChemTools.typical_plot_sim(SIM, EIS_EEC, "!EEC best fit")
