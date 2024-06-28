@@ -72,32 +72,39 @@ function get_EEC(EEC_structure)
 
   
   EEC_actual = EEC_data_struct(EEC_structure)
-  EEC_structure_splitted = split(EEC_actual.structure, "-")
-  prms_names = Array{String}(undef, 0)
   
-  for (i, token) in enumerate(EEC_structure_splitted)
-    if token=="R"
-      append!(prms_names, ["R$(i)"])
-    elseif token=="L"
-      append!(prms_names, ["L$(i)"])
-    elseif token=="C"
-      append!(prms_names, ["C$(i)"])  
-    elseif token=="RCPE(tilt)"
-      append!(prms_names, ["R$(i)", "C$(i)", "alpha$(i)"])
-    elseif token=="RCPE"
-      append!(prms_names, ["R$(i)", "C$(i)", "alpha$(i)"])
-    elseif token=="RC"
-      append!(prms_names, ["R$(i)", "C$(i)"])
-    elseif token=="RL"
-      append!(prms_names, ["R$(i)", "L$(i)"])
-    else
-      println("ERROR: build_EEC: Incorrect input of EEC_structure $(EEC_structure)")
-      throw(Exception)
-    end
+
+  if EEC_structure == "R+Rpol"
+    EEC_actual.prms_names = ["R", "R_pol"]
+  else
+    
+    EEC_structure_splitted = split(EEC_actual.structure, "-")
+    prms_names = Array{String}(undef, 0)
+    
+    for (i, token) in enumerate(EEC_structure_splitted)
+      if token=="R"
+        append!(prms_names, ["R$(i)"])
+      elseif token=="L"
+        append!(prms_names, ["L$(i)"])
+      elseif token=="C"
+        append!(prms_names, ["C$(i)"])  
+      elseif token=="RCPE(tilt)"
+        append!(prms_names, ["R$(i)", "C$(i)", "alpha$(i)"])
+      elseif token=="RCPE"
+        append!(prms_names, ["R$(i)", "C$(i)", "alpha$(i)"])
+      elseif token=="RC"
+        append!(prms_names, ["R$(i)", "C$(i)"])
+      elseif token=="RL"
+        append!(prms_names, ["R$(i)", "L$(i)"])
+      else
+        println("ERROR: build_EEC: Incorrect input of EEC_structure $(EEC_structure)")
+        throw(Exception)
+      end
+    end  
+    
+    append!(prms_names, ["Err"])
+    EEC_actual.prms_names = prms_names
   end
-  
-  append!(prms_names, ["Err"])
-  EEC_actual.prms_names = prms_names
   return  EEC_actual
 end
 
@@ -107,6 +114,12 @@ function g(EEC::EEC_data_struct, name::String)
 end
 
 function evaluate_EEC(EEC::EEC_data_struct, omega)
+
+  if EEC.structure == "R+Rpol"
+    Rpol = EEC.prms_values[2]
+    Cpol = 0.02/Rpol
+    return EEC.prms_values[1] + (Rpol)/(1 + im * omega * Rpol * Cpol)
+  end
 
   total_Z = 0
   for (i, token) in enumerate(split(EEC.structure, "-"))
@@ -281,6 +294,17 @@ function EEC_find_fit!(EEC_actual::EEC_data_struct, EIS_exp::DataFrame; mask=Not
       end
     end
     return output
+  end
+
+  function get_R_Rpol_prms(EIS_data)
+    high_R = real(EIS_data.Z[end])
+    low_R = real(EIS_data.Z[1])
+    return [high_R, low_R - high_R]
+  end
+
+  if EEC_actual.structure == "R+Rpol"
+    EEC_actual.prms_values = get_R_Rpol_prms(EIS_exp)
+    return
   end
 
   x_previous = Nothing
@@ -1099,7 +1123,7 @@ function run_EEC_fitting(;
     EEC_data_holder.data[TC_idx, pO2_idx, bias_idx, data_set_idx, :] = deepcopy(EEC_actual.prms_values)
     
     
-    if !(succesful_fit(actual_error, EIS_EEC, EIS_exp, error_type))
+    if !(succesful_fit(actual_error, EIS_EEC, EIS_exp, error_type)) && EEC_actual.structure != "R+Rpol"
       warning_buffer *="WARNING: (TC, pO2, bias, data_set_item) = ($(TC_item), $(pO2_item), $bias_item, $data_set_item) maybe NOT CONVERGED !!! // error $(actual_error) > defined threshold $(succes_fit_threshold) //\n"
       # TODO ... optionally save picture of the result for humanous check
       # or this reports can go to another error_log_file.txt
