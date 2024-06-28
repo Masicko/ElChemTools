@@ -118,3 +118,26 @@ fit_minimizer = fit_info.fit_minimizer
 # concatening data via bias!
 ElChemTools.get_joint_EEC_data_via_bias(EEC_data_1, EEC_data_2)
 
+
+
+## DAN_prepro
+# a special "fitting" procedure is evoked when 
+#            EEC_structure = "R+Rpol" 
+# is requested. The procedure just takes real parts
+# of the first and the last EIS data point and computes R and R_pol. BUT, the data must be properly prepared using
+#
+#            EIS_preprocessing_control = EIS_preprocessing_control(
+#               DAN_prepro=true,
+#             )
+# ,which finds the LH and HF intersections of impedance data with real axis "x" and makes extra impedance points 
+# for the "R+Rpol" structure.
+ElChemTools.run_EEC_fitting(TC= [700], pO2=1, bias=collect(46 : 46), 
+                                 data_set=["eis_200.z"],
+                                 EEC_structure="R+Rpol",
+                                 plot_bool=true, save_file_bool=true, 
+                                               
+                                 EIS_preprocessing_control = EIS_preprocessing_control(
+                                   DAN_prepro=true,
+                                   use_DRT=false
+                                 )       
+                           );
