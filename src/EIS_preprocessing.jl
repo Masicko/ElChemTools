@@ -27,6 +27,7 @@ mutable struct EIS_preprocessing_control
   outlayers_threshold
   use_DRT
   DRT_control
+  DAN_prepro
   #
   debug_plot
   
@@ -41,6 +42,7 @@ function EIS_preprocessing_control(;
                                     leave_only_inductance_points=Nothing,
                                     outlayers_threshold=1.5,                                    
                                     use_DRT=false, DRT_control=DRT_control_struct(),
+                                    DAN_prepro=false,
                                     #
                                     debug_plot=false
                                     )
@@ -53,6 +55,7 @@ function EIS_preprocessing_control(;
   this.outlayers_threshold = outlayers_threshold
   this.use_DRT = use_DRT
   this.DRT_control = DRT_control
+  this.DAN_prepro = DAN_prepro
   #
   this.debug_plot = debug_plot
   return this
@@ -79,6 +82,40 @@ end
 
 ##
 
+function get_lowest_freq_idx(EIS_df; find_at_least_negative=10)
+  lowest_freq_idx = -1
+  negative_counter = 0
+  for (i, Z) in enumerate(EIS_df.Z)
+    if imag(Z) < 0
+      negative_counter += 1
+    else
+      negative_counter = 0
+    end
+    if negative_counter == find_at_least_negative
+      lowest_freq_idx = i - find_at_least_negative + 1
+      break
+    end
+  end
+  return lowest_freq_idx
+end
+
+function get_high_freq_intersection_idx(EIS_df, find_at_least_negative=5)
+  HF_intersection_idx = -1
+  negative_counter = 0
+  for (i, Z) in enumerate(reverse(EIS_df.Z))
+    if imag(Z) < 0
+      negative_counter += 1
+    else
+      negative_counter = 0
+    end
+    if negative_counter == find_at_least_negative
+      HF_intersection_idx = length(EIS_df.Z) - (i - find_at_least_negative)
+      break
+    end
+  end
+  return HF_intersection_idx
+end
+
 #####################
 #####################
 # old version
@@ -100,6 +137,7 @@ function f_interval_auto_processing(EIS_df, trim_inductance=false, leave_only_in
     end
     return lowest_freq_idx
   end
+  
   
   #ElChemTools.typical_plot_exp(EIS_simulation(800, 100, 0.0, use_DRT=false)[1], EIS_df, "!f_interval_auto_processing")
 
@@ -130,7 +168,7 @@ function f_interval_auto_processing(EIS_df, trim_inductance=false, leave_only_in
       break
     end
   end
-  
+
   #@show x_intersection_freq_idx
   #@show lowest_freq_idx
   
@@ -282,6 +320,40 @@ function EIS_scale_data(EIS_df, EIS_preprocessing_control)
   end
 end
 
+function DAN_preprocessing(EIS_df, EIS_preprocessing_control)
+  
+  if EIS_preprocessing_control.DAN_prepro
+    # low frequency
+   # max_R = -1.0
+   # LF_idx = -1
+   # for (i, Z) in enumerate(EIS_df.Z)
+  #    if real(Z) > max_R
+  #      LF_idx = i
+ ##       max_R = real(Z)
+ #     end
+#    end
+    LF_intersection_idx = get_lowest_freq_idx(EIS_df, find_at_least_negative = 5)
+    if LF_intersection_idx == -1
+      LF_intersection_idx = 1
+    end
+
+
+    # high frequency
+    HF_intersection_idx = get_high_freq_intersection_idx(EIS_df, 5)
+    if HF_intersection_idx == -1
+      HF_intersection_idx = length(EIS_df.Z)
+    end
+
+    Z_list = [EIS_df.Z[LF_intersection_idx], EIS_df.Z..., EIS_df.Z[HF_intersection_idx]]
+    f_list = [EIS_df.f[1]*0.9, EIS_df.f..., EIS_df.f[end]*1.1]
+    
+    EIS_df = DataFrame(f = f_list, Z = Z_list)
+    return EIS_df
+  else
+    return EIS_df
+  end
+end
+
 
 function EIS_preprocessing(EIS_df, EIS_preprocessing_control::EIS_preprocessing_control)            
     new_EIS_df = deepcopy(EIS_df)
@@ -297,7 +369,10 @@ function EIS_preprocessing(EIS_df, EIS_preprocessing_control::EIS_preprocessing_
     #
     new_EIS_df = convolution(new_EIS_df, EIS_preprocessing_control)
     #
+    new_EIS_df = DAN_preprocessing(new_EIS_df, EIS_preprocessing_control)
+    #
     EIS_add_inductance!(new_EIS_df, EIS_preprocessing_control)
+    
     
     return new_EIS_df
 end
