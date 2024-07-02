@@ -23,6 +23,7 @@ mutable struct EIS_preprocessing_control
   scale_factor
   add_inductance
   trim_inductance
+  subtract_inductance_fac
   leave_only_inductance_points
   outlayers_threshold
   use_DRT
@@ -39,6 +40,7 @@ function EIS_preprocessing_control(;
                                     add_inductance=0, 
                                     scale_factor=Nothing,
                                     trim_inductance=false,
+                                    subtract_inductance_fac=0.0,
                                     leave_only_inductance_points=Nothing,
                                     outlayers_threshold=1.5,                                    
                                     use_DRT=false, DRT_control=DRT_control_struct(),
@@ -51,6 +53,7 @@ function EIS_preprocessing_control(;
   this.scale_factor = scale_factor
   this.add_inductance = add_inductance
   this.trim_inductance = trim_inductance
+  this.subtract_inductance_fac = subtract_inductance_fac
   this.leave_only_inductance_points = leave_only_inductance_points
   this.outlayers_threshold = outlayers_threshold
   this.use_DRT = use_DRT
@@ -312,6 +315,19 @@ function convolution(EIS_df, EIS_preprocessing_control)
   end
 end
 
+function subtract_inductance!(EIS_df, EIS_preprocessing_control)
+  if EIS_preprocessing_control.subtract_inductance_fac > 0
+    DRT_actual = get_DRT(EIS_df, EIS_preprocessing_control.DRT_control)
+    L = DRT_actual.L*EIS_preprocessing_control.subtract_inductance_fac
+    
+    for (i, f) in enumerate(EIS_df.f)
+        EIS_df.Z[i] -= im*2*pi*f*L
+    end
+  else
+    return
+  end
+end
+
 function EIS_scale_data(EIS_df, EIS_preprocessing_control)
   if EIS_preprocessing_control.scale_factor == Nothing
     return EIS_df
@@ -357,6 +373,8 @@ end
 
 function EIS_preprocessing(EIS_df, EIS_preprocessing_control::EIS_preprocessing_control)            
     new_EIS_df = deepcopy(EIS_df)
+
+    subtract_inductance!(new_EIS_df, EIS_preprocessing_control)
     
     new_EIS_df = f_interval_trim(new_EIS_df, EIS_preprocessing_control)    
     #

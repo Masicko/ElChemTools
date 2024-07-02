@@ -13,6 +13,11 @@
 # 
 #  One can use EIS_preprocessing (viz EIS_preprocessing_usage.jl)
 #
+#
+#  There is also a possibility to subtract indunctance using the keyword
+#      subtract_inductance_fac=1.0
+#  where the factor 1.0 means it subtract the inductance which comes out from gDRT analysis. 
+#  0.9 takes a little bit lower inductance.
 ##############################################################
 using ElChemTools
 
