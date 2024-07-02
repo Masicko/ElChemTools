@@ -360,6 +360,10 @@ function get_DRT(EIS_df::DataFrame, control::DRT_control_struct, debug_mode=fals
   if control.alg == "Tikhonov"
     solution= nonneg_lsq(A, b; alg=:nnls)
   elseif control.alg == "Gold"
+    if control.lambda != 0.0
+      println("ERROR: when using alg=\"Gold\", lambda must be set to 0.0")
+      return throw(Exception)
+    end
     solution = Gold_solve(A, b, control.k_Gold)
   else
     println("ERROR: DRT >>> wrong algoritm chosen: $(control.alg)")
