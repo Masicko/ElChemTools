@@ -182,7 +182,8 @@ end
 function export_df_add_row!(export_df, DRT_actual, SIM)
   keys = Symbol.(DRT_actual.tau_range)
   vals = DRT_actual.h
-
+  vals = map(x -> (x <= 1e-50 ? x = 0 : x), vals)
+  
   push!(export_df,
         (; TC = SIM.TC,
           pO2 = SIM.pO2,
