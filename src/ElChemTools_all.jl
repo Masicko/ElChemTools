@@ -179,11 +179,27 @@ end
 ###########################################################
 
 
-function export_df_add_row!(export_df, DRT_actual, SIM)
-  keys = Symbol.(DRT_actual.tau_range)
-  vals = DRT_actual.h
-  vals = map(x -> (x <= 1e-50 ? x = 0 : x), vals)
+function export_df_add_row!(export_df, DRT_actual, SIM, mode="h")
+  if mode=="h"
+    if DRT_actual.control.export_in_f
+      keys = Symbol.((1 ./ DRT_actual.tau_range ) ./ (2*pi))
+    else
+      keys = Symbol.(DRT_actual.tau_range)
+    end
+    vals = DRT_actual.h
+    vals = map(x -> (x <= 1e-50 ? x = 0 : x), vals)
+  end
   
+  if mode=="Rx"
+  # if length(DRT_actual.R_peak_list) > 0
+    max_R_peaks=20
+    keys = Symbol.(["R$(i)" for i in 1:max_R_peaks])
+    vals = [(i > length(DRT_actual.R_peak_list) ? 0.0 : DRT_actual.R_peak_list[i]) for i in 1:max_R_peaks]
+  end
+
+  
+
+
   push!(export_df,
         (; TC = SIM.TC,
           pO2 = SIM.pO2,
@@ -208,7 +224,7 @@ function test_DRT(SIM_list=Nothing;lambda=0.0, mode="EEC", TC=800, pO2=80, bias=
 tau_min_fac=10, tau_max_fac=10, tau_range_fac=2, k_Gold=-10, alg="Tikhonov",
 peak_merge_tol=0.0, fig_num=EIS_standard_figure_num, plot_bool=true, use_checknodes=false, plot_legend=true,
 CAP_comparison=false, CAP_bottleneck_prm="rR", CAP_plot_CAP_CV=true, CAP_plot_num = 101,
-export_file="", export_append=true, testing=false,
+export_file="", export_append=true, testing=false, divide_R_peaks=false, export_in_f=false,
 EIS_preprocessing_control = EIS_preprocessing_control(
                                   f_interval="auto", 
                                   add_inductance=0,
@@ -241,11 +257,12 @@ EIS_preprocessing_control = EIS_preprocessing_control(
 
   if export_file!=""
     export_df = DataFrame()
+    export_df_R = DataFrame()
   end
     
   for SIM in SIM_list, lambda_item in lambda
     # to add .... , tau_min_fac=tau_min_fac, tau_max_fac=tau_max_fac, tau_range_fac=tau_range_fac
-    DRT_control = DRT_control_struct(lambda_item, tau_min_fac, tau_max_fac, tau_range_fac, peak_merge_tol, Nothing, k_Gold, alg)
+    DRT_control = DRT_control_struct(lambda_item, tau_min_fac, tau_max_fac, tau_range_fac, peak_merge_tol, Nothing, k_Gold, alg, divide_R_peaks, export_in_f)
     SIM.DRT_control = DRT_control
     SIM.DRT_draw_semicircles=draw_semicircles
     SIM.DRT_backward_check=backward_check
@@ -302,7 +319,10 @@ EIS_preprocessing_control = EIS_preprocessing_control(
 
     if export_file!=""
       DRT_actual = get_DRT(EIS_df, DRT_control)
-      export_df_add_row!(export_df, DRT_actual, SIM)
+      export_df_add_row!(export_df, DRT_actual, SIM, "h")
+      if divide_R_peaks
+        export_df_add_row!(export_df_R, DRT_actual, SIM, "Rx")
+      end
     end
   end
   
@@ -349,6 +369,9 @@ EIS_preprocessing_control = EIS_preprocessing_control(
 
   if export_file!=""
     CSV.write(export_file, export_df, delim='\t', append=export_append)
+    if divide_R_peaks > 0
+      CSV.write("Rx_"*export_file, export_df_R, delim='\t', append=export_append)   
+    end
   end
   
   return true

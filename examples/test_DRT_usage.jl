@@ -14,10 +14,13 @@
 #  One can use EIS_preprocessing (viz EIS_preprocessing_usage.jl)
 #
 #
-#  There is also a possibility to subtract indunctance using the keyword
-#      subtract_inductance_fac=1.0
-#  where the factor 1.0 means it subtract the inductance which comes out from gDRT analysis. 
-#  0.9 takes a little bit lower inductance.
+#      - There is also a possibility to subtract indunctance using the keyword
+#             subtract_inductance_fac=1.0
+#             where the factor 1.0 means it subtract the inductance which comes out from gDRT analysis. 
+#             0.9 takes a little bit lower inductance.
+#      - export_in_f ... means the DRT spectrum h(tau) becames h(f)
+#      - divide_R_peaks = true ... the DRT spectrum is divaded by "hill starts/ends and valley between them"
+#            and than the R of each peak is evaluated and exported to a file with prefix "Rx..."
 ##############################################################
 using ElChemTools
 

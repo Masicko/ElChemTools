@@ -23,6 +23,8 @@ const DRT_standard_figure = 33
   specified_f_range = Nothing
   k_Gold::Int64=10000
   alg::String="Tikhonov"
+  divide_R_peaks::Bool=false
+  export_in_f::Bool=false
 end
 
 mutable struct DRT_struct
@@ -32,6 +34,7 @@ mutable struct DRT_struct
   R_ohm::Float64
   L::Float64
   peaks_df::DataFrame
+  R_peak_list::Array{Float64}
   control::DRT_control_struct
 end
 
@@ -49,6 +52,22 @@ end
 # end
 
 
+
+function discrete_integrate(tau_range, h_tau)
+  sum = 0
+  for i in 1:length(tau_range)
+    sum += h_tau[i]
+  end
+  return sum
+end
+
+function discrete_integrate(idx1, idx2, h_tau)
+  sum = 0
+  for i in idx1:idx2
+    sum += h_tau[i]
+  end
+  return sum
+end
 
 function get_R_C_from_DRT(tau_range=Nothing, h_tau=Nothing)
   mcounter = 1
@@ -74,14 +93,6 @@ function get_R_C_from_DRT(tau_range=Nothing, h_tau=Nothing)
     #plot(tau_range, to_fit)
   else
     to_fit = h_tau
-  end
-
-  function discrete_integrate(tau_range, h_tau)
-    sum = 0
-    for i in 1:length(tau_range)
-      sum += h_tau[i]
-    end
-    return sum
   end
   
   function to_optimize(x)
@@ -111,6 +122,93 @@ function get_R_C_from_DRT(tau_range=Nothing, h_tau=Nothing)
   return R_orig, C_orig
 end
 
+function divide_and_evaluate_R_peaks(DRT::DRT_struct)
+  
+  function valley_check(idx, f)
+    valley_th = threshold
+    if (f[idx] >= f[idx+1] + valley_th) && (f[idx + 1] + valley_th <= f[idx + 2])
+      return true 
+    else
+      return false
+    end
+  end
+
+  function hill_start_check(idx, f)
+    if (abs(f[idx] - f[idx+1]) <= threshold) && (f[idx + 1] + threshold <= f[idx + 2])
+      return true 
+    else
+      return false
+    end
+  end
+  
+  function hill_end_check(idx, f)
+    if (f[idx] > f[idx+1] + threshold) && (abs(f[idx + 1] - f[idx + 2]) <= threshold)
+      return true 
+    else
+      return false
+    end
+  end
+  
+  threshold = maximum(DRT.h)/10000.0
+  # first artefatic h decay
+  division_starting_idx = 1
+  while division_starting_idx + 1 <= length(DRT.h) && 
+        DRT.h[division_starting_idx + 1] - DRT.h[division_starting_idx] < threshold
+    division_starting_idx += 1
+  end
+  if division_starting_idx == length(DRT.h) - 1
+    ## TODO
+  end
+
+
+
+  # ending and check for artefacts
+  if length(DRT.h) >= 3
+    ending_idx = length(DRT.h) - 2
+    while ending_idx >= 1 
+      if hill_end_check(ending_idx, DRT.h)
+        ending_idx += 1
+        break
+      end
+      ending_idx -=1
+    end
+  else
+    ending_idx = length(DRT.h)
+  end
+
+
+  # main loop (with an assumption that in the low frequenceis there is no artefact)
+  active_idx = division_starting_idx
+  division_idxs = [division_starting_idx]
+  while active_idx < ending_idx - 1
+    if valley_check(active_idx, DRT.h) || hill_start_check(active_idx, DRT.h)
+      #@show valley_check(active_idx, DRT.h), hill_start_check(active_idx, DRT.h)
+      push!(division_idxs, active_idx+1)
+    end
+    active_idx += 1
+  end
+  push!(division_idxs, ending_idx)
+
+  if ending_idx < division_starting_idx
+    println("WARNING: starting idx is greater than ending idx in DRT!")
+    division_idxs = [division_starting_idx, length(DRT.h)]
+    return
+  end
+
+
+  #@show division_idxs, [log(10, DRT.tau_range[idx]) for idx in division_idxs]
+  # summing for R_list
+  R_list = []
+  for i in 1:length(division_idxs)-1
+    push!(
+      R_list, 
+      discrete_integrate(division_idxs[i], division_idxs[i+1] - 1, DRT.h)
+    )
+  end
+  #@show R_list
+  DRT.R_peak_list = R_list
+  return
+end
 
 function evaluate_RC_peaks_from_DRT(DRT::DRT_struct)
   
@@ -424,9 +522,12 @@ function get_DRT(EIS_df::DataFrame, control::DRT_control_struct, debug_mode=fals
     L_out = solution[N_tau+2]
   end
   
-  DRT_out = DRT_struct(EIS_new, tau_range, solution[1:N_tau], solution[N_tau+1], L_out, DataFrame(), control)
-  evaluate_RC_peaks_from_DRT(DRT_out)
+  DRT_out = DRT_struct(
+    EIS_new, tau_range, solution[1:N_tau], solution[N_tau+1], L_out, DataFrame(), [], control)
   
+  evaluate_RC_peaks_from_DRT(DRT_out)
+  control.divide_R_peaks && divide_and_evaluate_R_peaks(DRT_out)
+
   # the following do NOT change DRT function, only changes peaks_df
   if control.peak_merge_tol > 0.0
     work_to_be_done = true
