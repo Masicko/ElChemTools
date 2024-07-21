@@ -34,7 +34,7 @@ mutable struct DRT_struct
   R_ohm::Float64
   L::Float64
   peaks_df::DataFrame
-  R_peak_list::Array{Float64}
+  R_peak_list::Array{Any}
   control::DRT_control_struct
 end
 
@@ -196,16 +196,25 @@ function divide_and_evaluate_R_peaks(DRT::DRT_struct)
   end
 
 
-  #@show division_idxs, [log(10, DRT.tau_range[idx]) for idx in division_idxs]
+  @show division_idxs, [log(10, DRT.tau_range[idx]) for idx in division_idxs]
   # summing for R_list
   R_list = []
   for i in 1:length(division_idxs)-1
-    push!(
-      R_list, 
-      discrete_integrate(division_idxs[i], division_idxs[i+1] - 1, DRT.h)
-    )
+    R = discrete_integrate(division_idxs[i], division_idxs[i+1] - 1, DRT.h)
+    h_max = -1.0
+    f_max = -1.0
+    for i in division_idxs[i] : division_idxs[i+1]
+      if DRT.h[i] > h_max 
+        h_max = DRT.h[i]
+        f_max = 1/(DRT.tau_range[i] * 2*pi)
+      end
+    end
+    
+    #h_max_check = maximum(DRT.h[division_idxs[i] : division_idxs[i+1]])
+    #@show h_max, h_max_check
+    push!(R_list, (f_max, R))
   end
-  #@show R_list
+  @show R_list
   DRT.R_peak_list = R_list
   return
 end

@@ -192,9 +192,9 @@ function export_df_add_row!(export_df, DRT_actual, SIM, mode="h")
   
   if mode=="Rx"
   # if length(DRT_actual.R_peak_list) > 0
-    max_R_peaks=20
-    keys = Symbol.(["R$(i)" for i in 1:max_R_peaks])
-    vals = [(i > length(DRT_actual.R_peak_list) ? 0.0 : DRT_actual.R_peak_list[i]) for i in 1:max_R_peaks]
+    max_R_peaks=length(DRT_actual.R_peak_list)
+    keys = Symbol.([(i > length(DRT_actual.R_peak_list) ? 0.0 : DRT_actual.R_peak_list[i][1]) for i in 1:max_R_peaks])
+    vals = [(i > length(DRT_actual.R_peak_list) ? 0.0 : DRT_actual.R_peak_list[i][2]) for i in 1:max_R_peaks]
   end
 
   
