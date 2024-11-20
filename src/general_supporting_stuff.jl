@@ -207,3 +207,77 @@ function EIS_get_checknodes_geometrical(start_n, end_n, n_fac)
     end    
     return w_list
 end
+
+
+##### fiting parameters
+# supposing f = f(x, p) and the question is about how many parameters is in array "p"
+function findout_number_parameters(f, max_number_of_parameters=100)
+  for i in 1:max_number_of_parameters
+      try 
+          p = zeros(i)
+          f(1,p)
+          return i
+      catch e
+          if typeof(e) != BoundsError
+              throw(e)
+          end
+      end
+  end
+end
+
+function fit_func_prms(xdata, ydata, func; 
+                      boundary_prms=nothing,
+                      initial_prms=nothing,
+                      plot_bool=false, max_number_of_parameters=100, penalty_constant = 1000
+                      )
+  n_p = findout_number_parameters(func, max_number_of_parameters)
+
+  if length(xdata) != length(ydata)
+      println("ERROR: length(xdata) != length(ydata), $(length(xdata)) != $(length(ydata))")
+      return throw(Exception)
+  end
+  if typeof(initial_prms) == Nothing
+      initial_prms = zeros(n_p)
+      initial_prms .= 1.0
+  end
+  if typeof(boundary_prms) == Nothing
+      boundary_prms = Vector{Vector}(undef, n_p)
+      [boundary_prms[i] = [-Inf, Inf] for i in 1:n_p]
+  end
+
+  function in_bounds(p)
+      for i in 1:n_p
+          if !((boundary_prms[i][1] <= p[i]) && (p[i] <= boundary_prms[i][2]))
+              return false
+          end
+      end
+      return true
+  end
+
+  if !in_bounds(initial_prms)
+      println("ERROR: initial_prms $(initial_prms) not in bounds $(boundary_prms)")
+      return throw(Exception)
+  end
+  
+  function to_optimize(p)
+      #println(p)
+      if !in_bounds(p)
+          return penalty_constant
+      end
+
+      sum = 0
+      for i in 1:length(xdata)
+          sum += (func(xdata[i], p) - ydata[i])^2
+      end
+      return sum
+  end
+
+  opt = optimize(to_optimize, initial_prms)
+
+  if plot_bool
+      plot(xdata, ydata, label="data", "-x")
+      plot(xdata, [func(x, opt.minimizer) for x in xdata], label="fit", "--")
+      legend()
+  end
+  return opt.minimizer
+end
