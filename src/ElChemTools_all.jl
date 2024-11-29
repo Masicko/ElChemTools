@@ -9,6 +9,7 @@ using DataFrames
 using LinearAlgebra
 using NonNegLeastSquares
 using Revise
+using Serialization
 
 import Base.string
 
