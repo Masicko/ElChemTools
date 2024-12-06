@@ -8,11 +8,13 @@
 #
 #   TYJO ... fakt nevim, jak to rozumne charakterizovat. Jak urcit, ze jeden inflexni bod je ten, co chci (mezi kopcama) 
 #   a jiny inflexni bod nechci
-#
+# 
 #   ... jo, slo by to tak, ze se budu divat fakt na krivost a peaky najdu jako negativni peaky krivosti. 
 #       A udoli muzu najit bud jako pozitivni peaky krivosti.. a nebo nejaky prumer mezi inflexnimi body kladne casti krivosti
 #       <> Mozna to jeste nejak normovat, protoze male peaky budou mit mozna mensi krivost nez velke peaky... ale mozna je to blbost
 #
+#
+# TODO TODO ... eis_100 ... je tam jeden peak, ktery oci vidi, ale algoritmus ne.
 
 
 
@@ -20,9 +22,11 @@
 @kwdef mutable struct gaussian_fit_struct
     xdata :: Vector
     ydata :: Vector
-    num_peaks :: Vector
-    prms
-    func
+    num_peaks :: Int64
+    division_idxs :: Vector
+    #
+    func = Nothing
+    prms = Nothing
 end
 
 function gaussian_peak(x, mu, sigma, h, tilt=0.0)
@@ -98,7 +102,18 @@ function find_divisions(h_tau)
     find_divisions_curv(h_tau)
 end
 
-function inspect_mimina(ht, div_idxs = nothing)
+function plot_divisions(gf::gaussian_fit_struct)
+    plot_ht_and_func(gf.ydata, nothing, omit_f=true)
+    
+    grid(true)
+    if length(gf.division_idxs) != 0
+        for idx in gf.division_idxs
+            plot([idx, idx], [0, maximum(gf.ydata)], "black")
+        end
+    end
+end
+
+function plot_mimina(ht, div_idxs = nothing)
     figure(11) 
     plot(ht)
     #plot(collect(0.5 : 1.0 : length(ht)-1), ElChemTools.my_deriv(ht))
@@ -106,20 +121,122 @@ function inspect_mimina(ht, div_idxs = nothing)
     grid(true)
     if typeof(div_idxs) != Nothing
         for idx in div_idxs
-            plot([idx-1, idx-1], [0, maximum(ht)], "black")
+            plot([idx-1, idx-1  ], [0, maximum(ht)], "black")
         end
     end
 end
 
-function find_gaussian_peaks(tau, h_tau, control::DRT_control_struct=DRT_control_struct())
-    divisions_idxs = find_divisions(h_tau)
-    inspect_mimina(h_tau, divisions_idxs)
+function num_of_prms_per_peak(gf::gaussian_fit_struct)
+    return length(gf.prms)/gf.num_peaks
+end
 
-    #func(x, p) = gaussian_peak(x, p[1], p[2], p[3], p[4])
+function plot_ht_and_func(ht, f; omit_ht=false, omit_f=false, style=nothing)
+    xr = collect(1:length(ht))
+    if !omit_ht
+        plot(xr, ht)
+    end
+    if !omit_f
+        if typeof(style) == Nothing
+            plot(xr, [f(x) for x in xr])
+        else
+            plot(xr, [f(x) for x in xr], style)
+        end
+    end
+    return
+end
+
+function fit_gaussian_peaks(gf::gaussian_fit_struct, func::Function)
+    init_prms_tot = Float64[]
+    bounds_tot = []
+
+    plot_divisions(gf)
+
+    #for i in 1:3
+    for i in 1:gf.num_peaks
+        init_prms_loc = Float64[]
+        l_idx = gf.division_idxs[i]
+        r_idx = gf.division_idxs[i+1]
+        mean = Int64(round((l_idx+r_idx)/2))
+        
+        # mean
+        push!(init_prms_loc, (mean))
+        push!(bounds_tot, [l_idx, r_idx])
+
+        # var
+        push!(init_prms_loc, 0.2*(r_idx - l_idx))
+        push!(bounds_tot, [1.0e-7, 1.0e4])
+
+        # h
+        h_at_mean = gf.ydata[mean]
+        push!(init_prms_loc, h_at_mean)
+        push!(bounds_tot, h_at_mean.*[0.5, 1.5])
+
+        # tilt
+        if findout_number_parameters(func) > 3
+            push!(init_prms_loc, 0.0)
+            push!(bounds_tot, [-1.0, 1.0])
+        end
+
+
+        # local fit
+        #plot_ht_and_func(gf.ydata, x -> func(x, init_prms_loc), omit_ht=true, style=":")
+
+        loc_ydata = gf.ydata[l_idx : r_idx]
+        fitted_prms_loc = fit_func_prms(
+            collect(l_idx:r_idx), 
+            loc_ydata, 
+            func, 
+            initial_prms = init_prms_loc,
+            boundary_prms = bounds_tot[end - length(init_prms_loc)+1 : end],
+            #plot_bool=true
+        )
+
+        append!(init_prms_tot, fitted_prms_loc)
+
+        #plot_ht_and_func(gf.ydata, x -> func(x, fitted_prms_loc), omit_ht=true, style="--")
+    end
+
+    n_prms_per_peak = Int64(length(init_prms_tot)/gf.num_peaks)
+    @show n_prms_per_peak, init_prms_tot, gf.num_peaks
+    func_tot(x , p) = sum([func(x, p[i:i+n_prms_per_peak-1])
+                            for i in 1: n_prms_per_peak : n_prms_per_peak*gf.num_peaks ]
+                        )
+
+    plot_ht_and_func(gf.ydata, x -> func_tot(x, init_prms_tot), omit_ht=true, style=":")
+
+    fitted_prms_tot = fit_func_prms(
+            collect(1 : length(gf.ydata)), 
+            gf.ydata, 
+            func_tot, 
+            initial_prms = init_prms_tot,
+            boundary_prms = bounds_tot,
+        )
+
+    plot_ht_and_func(gf.ydata, x -> func_tot(x, fitted_prms_tot), omit_ht=true, style="-.")
+    
+    return
+end
+
+function find_gaussian_peaks(tau, h_tau, control::DRT_control_struct=DRT_control_struct())
+    division_idxs = find_divisions(h_tau)
+    #plot_mimina(h_tau, division_idxs)
+    l_tau = log.(10, tau)
+
+    gaussian_fit = gaussian_fit_struct(
+            xdata = l_tau, 
+            ydata = h_tau, 
+            num_peaks = length(division_idxs) - 1,
+            division_idxs = division_idxs
+    )
+
+    #n_per_peak = num_of_prms_per_peak(gaussian_fit)
+    figure(11)    
+    #fit_gaussian_peaks(gaussian_fit, (x, p) -> gaussian_peak(x, p[1], p[2], p[3]))
+    fit_gaussian_peaks(gaussian_fit, (x, p) -> gaussian_peak(x, p[1], p[2], p[3], p[4]))
 
     #part_fits, part_bounds = get_partial_data(tau, h_tau, division_idxs)
     #whole fit
-    return
+    return gaussian_fit
 end
 
 

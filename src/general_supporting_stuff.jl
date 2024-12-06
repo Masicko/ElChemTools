@@ -260,15 +260,15 @@ function fit_func_prms(xdata, ydata, func;
   end
   
   function to_optimize(p)
-      #println(p)
-      if !in_bounds(p)
-          return penalty_constant
-      end
-
       sum = 0
+      if !in_bounds(p)
+          return sum += penalty_constant
+      end
+     
       for i in 1:length(xdata)
           sum += (func(xdata[i], p) - ydata[i])^2
       end
+      #println(p, " -> ", sum)
       return sum
   end
 
@@ -276,6 +276,7 @@ function fit_func_prms(xdata, ydata, func;
 
   if plot_bool
       plot(xdata, ydata, label="data", "-x")
+      plot(xdata, [func(x, initial_prms) for x in xdata], label="init", ":")
       plot(xdata, [func(x, opt.minimizer) for x in xdata], label="fit", "--")
       legend()
   end
