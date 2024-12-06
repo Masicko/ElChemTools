@@ -15,6 +15,11 @@
 #
 #
 # TODO TODO ... eis_100 ... je tam jeden peak, ktery oci vidi, ale algoritmus ne.
+# ... rozdelovani na oblasti funguje pekne
+# [ ] zlepsit inicialni nastrely ... specialne u "schovanych peaku" v udoli je to hrozne
+# [ ] s tim souvisi nejake navazeni, jak je ktery peak dulezity pri fitovani. Sdelit algoritmu, ze ma "zacit" tema dulezityma.. 
+#     a pak dofitovat ty ostatni mensi peaky, ktere nejsou tak zretelne. Neco jako odcitani kopecku 
+#     (vlastne by bylo zajimave to alespon videt.. co se stane, kdyz se odectou ty dva velke jasne kopce, co zustane?)
 
 
 
@@ -70,6 +75,31 @@ function find_divisions_std(h_tau)
     return div_idxs
 end
 
+function find_divisions_maximum(h_tau)
+    tol = maximum(h_tau)*1e-8
+    dht = my_deriv(h_tau)
+    ddht = my_deriv(dht)
+    ddht = [1.0e-6, ddht..., 1.0e-6]
+
+    div_idxs = []
+    i = 2
+    while i <= length(ddht)-1
+        if ddht[i-1] + tol < ddht[i] && ddht[i] > ddht[i+1] + tol
+            push!(div_idxs, i)
+        end
+        i += 1
+    end
+
+    if length(div_idxs) < 2
+        println("ERROR: div_idxs < 2")
+        return throw(Exception)
+    end
+
+    div_idxs = [1, div_idxs[2:end-1]..., length(h_tau)]
+    #@show div_idxs
+    return div_idxs  
+end
+
 function find_divisions_curv(h_tau)
     tol = maximum(h_tau)*1e-8
     dht = my_deriv(h_tau)
@@ -101,7 +131,7 @@ end
 
 # the deciding points should be 1) local minima and 2) inflex points
 function find_divisions(h_tau)
-    find_divisions_curv(h_tau)
+    find_divisions_maximum(h_tau)
 end
 
 function plot_divisions(gf::gaussian_fit_struct)
@@ -160,7 +190,7 @@ function find_peak_idxs(ddht, l_idx, r_idx)
         end
         i += 1
     end
-    #@show peak_idxs
+    @show peak_idxs
     if length(peak_idxs) != 2
         println("ERROR: peak_idxs $(peak_idxs) doesnt have 2 elements")
         return throw(Exception)
@@ -183,18 +213,19 @@ function fit_gaussian_peaks(gf::gaussian_fit_struct, func::Function)
         ddht = my_deriv(my_deriv(gf.ydata))
         ddht = [1.0e-5, ddht..., 1.0e-5]
         plot(collect(1:length(ddht)), ddht)
-        peak_idxs = find_peak_idxs(ddht, l_idx, r_idx)
 
-        min = Inf
+        the_min = Inf
         idx_min = -1
-        for k in peak_idxs[1] : peak_idxs[2]
-            if ddht[k] < min
-                min = ddht[k]
+        for k in l_idx : r_idx
+            if ddht[k] < the_min
+                the_min = ddht[k]
                 idx_min = k
             end
         end
         mean = idx_min
-
+        peak_radius = 2
+        peak_idxs = [max(mean - peak_radius, l_idx), min(mean + peak_radius, r_idx)]
+        
         # mean
         push!(init_prms_loc, (mean))
         push!(bounds_tot, [l_idx, r_idx])
@@ -274,8 +305,8 @@ function find_gaussian_peaks(tau, h_tau, control::DRT_control_struct=DRT_control
     )
 
     figure(11)    
-    #fit_gaussian_peaks(gaussian_fit, (x, p) -> gaussian_peak(x, p[1], p[2], p[3]))
-    fit_gaussian_peaks(gaussian_fit, (x, p) -> gaussian_peak(x, p[1], p[2], p[3], p[4]))
+    fit_gaussian_peaks(gaussian_fit, (x, p) -> gaussian_peak(x, p[1], p[2], p[3]))
+    #fit_gaussian_peaks(gaussian_fit, (x, p) -> gaussian_peak(x, p[1], p[2], p[3], p[4]))
 
     #part_fits, part_bounds = get_partial_data(tau, h_tau, division_idxs)
     #whole fit
