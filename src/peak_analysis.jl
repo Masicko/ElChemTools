@@ -179,14 +179,28 @@ function fit_gaussian_peaks(gf::gaussian_fit_struct, func::Function)
         init_prms_loc = Float64[]
         l_idx = gf.division_idxs[i]
         r_idx = gf.division_idxs[i+1]
-        mean = Int64(round((l_idx+r_idx)/2))
         
+        ddht = my_deriv(my_deriv(gf.ydata))
+        ddht = [1.0e-5, ddht..., 1.0e-5]
+        plot(collect(1:length(ddht)), ddht)
+        peak_idxs = find_peak_idxs(ddht, l_idx, r_idx)
+
+        min = Inf
+        idx_min = -1
+        for k in peak_idxs[1] : peak_idxs[2]
+            if ddht[k] < min
+                min = ddht[k]
+                idx_min = k
+            end
+        end
+        mean = idx_min
+
         # mean
         push!(init_prms_loc, (mean))
         push!(bounds_tot, [l_idx, r_idx])
 
         # var
-        push!(init_prms_loc, 0.2*(r_idx - l_idx))
+        push!(init_prms_loc, 0.4*(peak_idxs[2] - peak_idxs[1]))
         push!(bounds_tot, [1.0e-7, 1.0e4])
 
         # h
@@ -203,11 +217,6 @@ function fit_gaussian_peaks(gf::gaussian_fit_struct, func::Function)
 
         # local fit
         #plot_ht_and_func(gf.ydata, x -> func(x, init_prms_loc), omit_ht=true, style=":")
-
-        ddht = my_deriv(my_deriv(gf.ydata))
-        ddht = [1.0e-5, ddht..., 1.0e-5]
-        #plot(collect(1:length(ddht)), ddht)
-        peak_idxs = find_peak_idxs(ddht, l_idx, r_idx)
       
         #loc_ydata = gf.ydata[l_idx : r_idx]
         loc_ydata = gf.ydata[peak_idxs[1] : peak_idxs[2]]
@@ -218,7 +227,7 @@ function fit_gaussian_peaks(gf::gaussian_fit_struct, func::Function)
             func, 
             initial_prms = init_prms_loc,
             boundary_prms = bounds_tot[end - length(init_prms_loc)+1 : end],
-            plot_bool=true
+            #plot_bool=true
         )
 
         append!(init_prms_tot, fitted_prms_loc)
@@ -231,7 +240,7 @@ function fit_gaussian_peaks(gf::gaussian_fit_struct, func::Function)
                             for i in 1: n_prms_per_peak : n_prms_per_peak*gf.num_peaks ]
                         )
 
-    #plot_ht_and_func(gf.ydata, x -> func_tot(x, init_prms_tot), omit_ht=true, style=":")
+    #plot_ht_and_func(gf.ydata, x -> func_tot(x, init_prms_tot), omit_ht=true, style="-b")
 
     fitted_prms_tot = fit_func_prms(
             collect(1 : length(gf.ydata)), 
@@ -243,6 +252,8 @@ function fit_gaussian_peaks(gf::gaussian_fit_struct, func::Function)
 
     plot_ht_and_func(gf.ydata, x -> func_tot(x, fitted_prms_tot), omit_ht=true, style="-.")
     
+    #@show fitted_prms_tot
+
     for i in 1: n_prms_per_peak : n_prms_per_peak*gf.num_peaks
         plot_ht_and_func(gf.ydata, x -> func(x, fitted_prms_tot[i : i+n_prms_per_peak-1 ]), omit_ht=true, style="--")
     end
@@ -263,8 +274,8 @@ function find_gaussian_peaks(tau, h_tau, control::DRT_control_struct=DRT_control
     )
 
     figure(11)    
-    fit_gaussian_peaks(gaussian_fit, (x, p) -> gaussian_peak(x, p[1], p[2], p[3]))
-    #fit_gaussian_peaks(gaussian_fit, (x, p) -> gaussian_peak(x, p[1], p[2], p[3], p[4]))
+    #fit_gaussian_peaks(gaussian_fit, (x, p) -> gaussian_peak(x, p[1], p[2], p[3]))
+    fit_gaussian_peaks(gaussian_fit, (x, p) -> gaussian_peak(x, p[1], p[2], p[3], p[4]))
 
     #part_fits, part_bounds = get_partial_data(tau, h_tau, division_idxs)
     #whole fit
