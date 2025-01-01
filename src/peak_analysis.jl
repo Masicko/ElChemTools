@@ -198,11 +198,24 @@ function find_peak_idxs(ddht, l_idx, r_idx)
     return peak_idxs
 end
 
-function fit_gaussian_peaks(gf::gaussian_fit_struct, func::Function)
+function no_peak_prms(aux_gf)
+    return [0.0, 0.0, 1.0]
+end
+
+function change_prms_of_peak(gf, prms, peak)
+    npp = num_of_prms_per_peak(gf) 
+    if peak > gf.num_peaks
+        println("ERROR: peak $(peak) > num_peaks $(gf.num_peaks)")
+        throw(Exception)
+    end
+    gf.prms[Int64.((peak -1)*npp + 1 : peak*npp)] = prms
+end
+
+function fit_gaussian_peaks(gf::gaussian_fit_struct, func::Function; plot_bool = false)
     init_prms_tot = Float64[]
     bounds_tot = []
 
-    plot_divisions(gf)
+    plot_bool && plot_divisions(gf)
 
     #for i in 1:3
     for i in 1:gf.num_peaks
@@ -212,7 +225,8 @@ function fit_gaussian_peaks(gf::gaussian_fit_struct, func::Function)
         
         ddht = my_deriv(my_deriv(gf.ydata))
         ddht = [1.0e-5, ddht..., 1.0e-5]
-        plot(collect(1:length(ddht)), ddht)
+        
+        plot_bool && plot(collect(1:length(ddht)), ddht)
 
         the_min = Inf
         idx_min = -1
@@ -263,7 +277,7 @@ function fit_gaussian_peaks(gf::gaussian_fit_struct, func::Function)
 
         append!(init_prms_tot, fitted_prms_loc)
 
-        plot_ht_and_func(gf.ydata, x -> func(x, fitted_prms_loc), omit_ht=true, style=":")
+        #plot_ht_and_func(gf.ydata, x -> func(x, fitted_prms_loc), omit_ht=true, style=":")
     end
 
     n_prms_per_peak = Int64(length(init_prms_tot)/gf.num_peaks)
@@ -273,27 +287,83 @@ function fit_gaussian_peaks(gf::gaussian_fit_struct, func::Function)
 
     #plot_ht_and_func(gf.ydata, x -> func_tot(x, init_prms_tot), omit_ht=true, style="-b")
 
+    weights = zeros(length(gf.ydata))
+    weights .= 1.0
+    #weights[gf.division_idxs[2] : gf.division_idxs[3]] .= 0.3
+
     fitted_prms_tot = fit_func_prms(
             collect(1 : length(gf.ydata)), 
             gf.ydata, 
             func_tot, 
             initial_prms = init_prms_tot,
             boundary_prms = bounds_tot,
+            weights = weights
         )
+    gf.prms = fitted_prms_tot
+    gf.func = func_tot
 
-    plot_ht_and_func(gf.ydata, x -> func_tot(x, fitted_prms_tot), omit_ht=true, style="-.")
+    plot_bool && plot_ht_and_func(gf.ydata, x -> func_tot(x, fitted_prms_tot), omit_ht=true, style="-.")
     
     #@show fitted_prms_tot
 
-    for i in 1: n_prms_per_peak : n_prms_per_peak*gf.num_peaks
+    plot_bool && for i in 1: n_prms_per_peak : n_prms_per_peak*gf.num_peaks
         plot_ht_and_func(gf.ydata, x -> func(x, fitted_prms_tot[i : i+n_prms_per_peak-1 ]), omit_ht=true, style="--")
     end
 
     return
 end
 
+
+function subtract_peaks(gf::gaussian_fit_struct, sub_peaks)
+    aux_gf = deepcopy(gf)
+    for i in 1:aux_gf.num_peaks
+        !(i in sub_peaks) && change_prms_of_peak(aux_gf, no_peak_prms(aux_gf), i)
+    end
+
+    
+    res = [aux_gf.ydata[i] - aux_gf.func(i, aux_gf.prms) for i in 1:length(aux_gf.xdata)]
+    plot(1:length(res), res, "black") 
+    return 
+end
+
+function get_Rt_info(gf::gaussian_fit_struct)
+    peaks_funcs = []
+    for peak_num in 1:gf.num_peaks
+        aux_gf = deepcopy(gf)
+        for i in 1:gf.num_peaks
+            i != peak_num && change_prms_of_peak(aux_gf, no_peak_prms(aux_gf), i)
+        end
+        res = [aux_gf.func(i, aux_gf.prms) for i in 1:length(aux_gf.xdata)]
+        #plot(1:length(res), res, "black")
+        push!(peaks_funcs, res)
+    end
+    
+    peak_Rs = zeros(gf.num_peaks)
+    for x in 1:length(gf.xdata)
+        sum_on_x = 0.0
+        for peak_num in 1:gf.num_peaks
+            sum_on_x += peaks_funcs[peak_num][x]
+        end
+        for peak_num in 1:gf.num_peaks
+            peak_Rs[peak_num] += gf.ydata[x] * (peaks_funcs[peak_num][x]/sum_on_x)
+        end
+    end
+
+    peak_ts = []
+    npp = num_of_prms_per_peak(gf)
+    for peak_num in 1:gf.num_peaks
+        mean = gf.prms[Int((peak_num -1)*npp + 1)]
+        push!(peak_ts, gf.xdata[Int(round(mean))])
+    end
+
+    return [z for z in zip(1.0 ./(10.0 .^peak_ts), peak_Rs)]
+end
+
 function find_gaussian_peaks(tau, h_tau, control::DRT_control_struct=DRT_control_struct())
-    division_idxs = find_divisions(h_tau)
+    plot_bool = control.R_peaks_plot_bool
+    #division_idxs = find_divisions_maximum(h_tau)
+    division_idxs = find_divisions_curv(h_tau)
+
     #plot_mimina(h_tau, division_idxs)
     l_tau = log.(10, tau)
 
@@ -304,13 +374,23 @@ function find_gaussian_peaks(tau, h_tau, control::DRT_control_struct=DRT_control
             division_idxs = division_idxs
     )
 
-    figure(11)    
-    fit_gaussian_peaks(gaussian_fit, (x, p) -> gaussian_peak(x, p[1], p[2], p[3]))
+    
+    if plot_bool
+        act_fig = PyPlot.gcf()
+        figure(11)
+    end
+    # without tilt
+
+    fit_gaussian_peaks(gaussian_fit, (x, p) -> gaussian_peak(x, p[1], p[2], p[3]), plot_bool=plot_bool)
+    # with tilt
     #fit_gaussian_peaks(gaussian_fit, (x, p) -> gaussian_peak(x, p[1], p[2], p[3], p[4]))
 
-    #part_fits, part_bounds = get_partial_data(tau, h_tau, division_idxs)
-    #whole fit
-    return gaussian_fit
+    #subtract_peaks(gaussian_fit, [1,3])
+    Rt_res = get_Rt_info(gaussian_fit)
+
+    plot_bool && figure(act_fig)
+
+    return Rt_res
 end
 
 
@@ -390,49 +470,51 @@ function divide_and_evaluate_R_peaks(DRT::DRT_struct)
     ht_o = DRT.h[division_starting_idx : ending_idx]
     t_o = DRT.tau_range[division_starting_idx : ending_idx]
     
-    serialize("last_lt_ht.dat", [log.(10, t_o), ht_o])
-    find_gaussian_peaks(t_o, ht_o, DRT.control)
+    #serialize("last_lt_ht.dat", [log.(10, t_o), ht_o])
+    DRT.R_peak_list = find_gaussian_peaks(t_o, ht_o, DRT.control)
 
 
-    # main loop (with an assumption that in the low frequenceis there is no artefact)
-    active_idx = division_starting_idx
-    division_idxs = [division_starting_idx]
-    while active_idx < ending_idx - 1
-        if valley_check(active_idx, DRT.h) || hill_start_check(active_idx, DRT.h)
-            #@show valley_check(active_idx, DRT.h), hill_start_check(active_idx, DRT.h)
-            push!(division_idxs, active_idx+1)
-        end
-    active_idx += 1
-    end
-    push!(division_idxs, ending_idx)
+    # # main loop (with an assumption that in the low frequenceis there is no artefact)
+    # active_idx = division_starting_idx
+    # division_idxs = [division_starting_idx]
+    # while active_idx < ending_idx - 1
+    #     if valley_check(active_idx, DRT.h) || hill_start_check(active_idx, DRT.h)
+    #         #@show valley_check(active_idx, DRT.h), hill_start_check(active_idx, DRT.h)
+    #         push!(division_idxs, active_idx+1)
+    #     end
+    # active_idx += 1
+    # end
+    # push!(division_idxs, ending_idx)
 
-    if ending_idx < division_starting_idx
-        println("WARNING: starting idx is greater than ending idx in DRT!")
-        division_idxs = [division_starting_idx, length(DRT.h)]
-        return
-    end
+    # if ending_idx < division_starting_idx
+    #     println("WARNING: starting idx is greater than ending idx in DRT!")
+    #     division_idxs = [division_starting_idx, length(DRT.h)]
+    #     return
+    # end
 
 
-    #@show division_idxs, [log(10, DRT.tau_range[idx]) for idx in division_idxs]
-    # summing for R_list
-    R_list = []
-    for i in 1:length(division_idxs)-1
-        R = discrete_integrate(division_idxs[i], division_idxs[i+1] - 1, DRT.h)
-        h_max = -1.0
-        f_max = -1.0
-        for i in division_idxs[i] : division_idxs[i+1]
-            if DRT.h[i] > h_max 
-                h_max = DRT.h[i]
-                f_max = 1/(DRT.tau_range[i] * 2*pi)
-            end
-        end
+    # #@show division_idxs, [log(10, DRT.tau_range[idx]) for idx in division_idxs]
+    # # summing for R_list
+    # R_list = []
+    # for i in 1:length(division_idxs)-1
+    #     R = discrete_integrate(division_idxs[i], division_idxs[i+1] - 1, DRT.h)
+    #     h_max = -1.0
+    #     f_max = -1.0
+    #     for i in division_idxs[i] : division_idxs[i+1]
+    #         if DRT.h[i] > h_max 
+    #             h_max = DRT.h[i]
+    #             f_max = 1/(DRT.tau_range[i] * 2*pi)
+    #         end
+    #     end
         
-        #h_max_check = maximum(DRT.h[division_idxs[i] : division_idxs[i+1]])
-        #@show h_max, h_max_check
-        push!(R_list, (f_max, R))
-    end
-    #@show R_list
-    DRT.R_peak_list = R_list
+    #     #h_max_check = maximum(DRT.h[division_idxs[i] : division_idxs[i+1]])
+    #     #@show h_max, h_max_check
+    #     push!(R_list, (f_max, R))
+    # end
+    # #@show R_list
+    # DRT.R_peak_list = R_list
+
+
     return
 end
   

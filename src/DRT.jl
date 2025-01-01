@@ -25,6 +25,7 @@ const DRT_standard_figure = 33
   k_Gold::Int64=10000
   alg::String="Tikhonov"
   divide_R_peaks::Bool=false
+  R_peaks_plot_bool::Bool=false
   export_in_f::Bool=false
 end
 

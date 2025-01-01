@@ -23,8 +23,9 @@ docs/site/
 # environment.
 #Manifest.toml
 
-git_ignored_folder/*
+git_ignored/
 snehurka/experimental_data_PSS
+snehurka/individual_files
 
 custom_import_experimental_data.jl
 data/*

@@ -3,7 +3,7 @@ using ElChemTools
 # view_EEC function for trying several EECs ...
 ElChemTools.view_EEC(
            EEC_structure="RL-R-L-RCPE-RCPE",
-           prms_values=[0.7, 0.0011,      1.7, 0,        0. , 0.001, 1.0,    1.0, 0.01, [0.8, 1.]], 
+           prms_values=[0.7, 0.0011,      1.7, 0,        0. , 0.001, 1.0,    1.0, 0.01, [0.8, 1.], 0.666], 
            f_range=(0.01, 10000, 1.2), # (lowest frequency, highest frequency, growing_factor)
            print_bool=true,
            plot_legend=true);

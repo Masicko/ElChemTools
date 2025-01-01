@@ -16,11 +16,12 @@
 #
 #      - There is also a possibility to subtract indunctance using the keyword
 #             subtract_inductance_fac=1.0
-#             where the factor 1.0 means it subtract the inductance which comes out from gDRT analysis. 
+#             where the factor 1.0 means it subtracts the inductance which comes out from gDRT analysis. 
 #             0.9 takes a little bit lower inductance.
 #      - export_in_f ... means the DRT spectrum h(tau) becames h(f)
-#      - divide_R_peaks = true ... the DRT spectrum is divaded by "hill starts/ends and valley between them"
+#      - divide_R_peaks = true ... the DRT spectrum is divaded by "2nd derivative division and gaussian peaks fitting"
 #            and than the R of each peak is evaluated and exported to a file with prefix "Rx..."
+#      - R_peaks_plot_bool = true ... the division and gaussian peak fitting is shown
 ##############################################################
 using ElChemTools
 

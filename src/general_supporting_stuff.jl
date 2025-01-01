@@ -228,6 +228,7 @@ end
 function fit_func_prms(xdata, ydata, func; 
                       boundary_prms=nothing,
                       initial_prms=nothing,
+                      weights=nothing,
                       plot_bool=false, max_number_of_parameters=100, penalty_constant = 1000
                       )
   n_p = findout_number_parameters(func, max_number_of_parameters)
@@ -243,6 +244,14 @@ function fit_func_prms(xdata, ydata, func;
   if typeof(boundary_prms) == Nothing
       boundary_prms = Vector{Vector}(undef, n_p)
       [boundary_prms[i] = [-Inf, Inf] for i in 1:n_p]
+  end
+  if typeof(weights) == Nothing
+    weights = Vector{Float64}(undef, length(xdata))
+    weights .= 1.0
+  else
+    if length(weights) != length(xdata)
+      println("ERROR: length(weights) != length(xdata), $(length(weights)) != $(length(xdata))")
+    end
   end
 
   function in_bounds(p)
@@ -266,7 +275,7 @@ function fit_func_prms(xdata, ydata, func;
       end
      
       for i in 1:length(xdata)
-          sum += (func(xdata[i], p) - ydata[i])^2
+          sum += weights[i]*(func(xdata[i], p) - ydata[i])^2
       end
       #println(p, " -> ", sum)
       return sum
@@ -281,4 +290,14 @@ function fit_func_prms(xdata, ydata, func;
       legend()
   end
   return opt.minimizer
+end
+
+function get_f_range_from_triplet(tri)
+  f_storage = Float64[]
+  f = tri[1]
+  while f <= tri[2]
+    push!(f_storage, f)
+    f = f*tri[3]
+  end  
+  return f_storage
 end

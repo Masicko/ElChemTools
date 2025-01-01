@@ -221,19 +221,26 @@ function export_df_add_row!(export_df, DRT_actual, SIM, mode="h")
 end
 
 
-function test_DRT(SIM_list=Nothing;lambda=0.0, mode="EEC", TC=800, pO2=80, bias=0.0, R_ohm=1, R1=1, C1=0.001, R2=1, C2=0.0001, alpha=1, prms_names=[], prms_values=[], backward_check=true, draw_semicircles=false, plot_option="Nyq DRT Bode RC", f_range=EIS_get_shared_f_range(), data_set="examples/default_EIS_example.z", physical_model_name=Nothing,
-tau_min_fac=10, tau_max_fac=10, tau_range_fac=2, k_Gold=-10, alg="Tikhonov",
-peak_merge_tol=0.0, fig_num=EIS_standard_figure_num, plot_bool=true, use_checknodes=false, plot_legend=true,
-CAP_comparison=false, CAP_bottleneck_prm="rR", CAP_plot_CAP_CV=true, CAP_plot_num = 101,
-export_file="", export_append=true, testing=false, divide_R_peaks=false, export_in_f=false,
-EIS_preprocessing_control = EIS_preprocessing_control(
-                                  f_interval="auto", 
-                                  add_inductance=0,
-                                  trim_inductance=true, 
-                                  outlayers_threshold=Inf,                                    
-                                  use_DRT=false, DRT_control=DRT_control_struct()
-                  )
-)
+
+
+function test_DRT(SIM_list=Nothing;lambda=0.0, 
+                  mode="EEC", TC=800, pO2=80, bias=0.0, R_ohm=1, R1=1, C1=0.001, R2=1, C2=0.0001, alpha=1, 
+                  prms_names=[], prms_values=[], backward_check=true, draw_semicircles=false, plot_option="Nyq DRT Bode RC", 
+                  f_range=EIS_get_shared_f_range(), data_set="examples/default_EIS_example.z", physical_model_name=Nothing,
+                  tau_min_fac=10, tau_max_fac=10, tau_range_fac=2, k_Gold=-10, alg="Tikhonov",
+                  peak_merge_tol=0.0, fig_num=EIS_standard_figure_num, 
+                  EEC_structure="", EEC_prms=[],
+                  plot_bool=true, use_checknodes=false, plot_legend=true,
+                  CAP_comparison=false, CAP_bottleneck_prm="rR", CAP_plot_CAP_CV=true, CAP_plot_num = 101,
+                  export_file="", export_append=true, testing=false, divide_R_peaks=false, R_peaks_plot_bool=false, export_in_f=false,
+                  EIS_preprocessing_control = EIS_preprocessing_control(  
+                                                    f_interval="auto", 
+                                                    add_inductance=0,
+                                                    trim_inductance=true, 
+                                                    outlayers_threshold=Inf,                                    
+                                                    use_DRT=false, DRT_control=DRT_control_struct()
+                                    )
+  )
 
 
   if data_set=="POLY_OCV_test"
@@ -263,7 +270,7 @@ EIS_preprocessing_control = EIS_preprocessing_control(
     
   for SIM in SIM_list, lambda_item in lambda
     # to add .... , tau_min_fac=tau_min_fac, tau_max_fac=tau_max_fac, tau_range_fac=tau_range_fac
-    DRT_control = DRT_control_struct(lambda_item, tau_min_fac, tau_max_fac, tau_range_fac, peak_merge_tol, Nothing, k_Gold, alg, divide_R_peaks, export_in_f)
+    DRT_control = DRT_control_struct(lambda_item, tau_min_fac, tau_max_fac, tau_range_fac, peak_merge_tol, Nothing, k_Gold, alg, divide_R_peaks, R_peaks_plot_bool, export_in_f)
     SIM.DRT_control = DRT_control
     SIM.DRT_draw_semicircles=draw_semicircles
     SIM.DRT_backward_check=backward_check
@@ -274,9 +281,11 @@ EIS_preprocessing_control = EIS_preprocessing_control(
     #@show SIM
     
     if mode=="EEC"
-      EIS_df = EIS_get_RC_CPE_elements(R1, C1, R2, C2, alpha, R_ohm, f_range=f_range)
+      EEC = view_EEC(EEC_structure=EEC_structure, prms_values=EEC_prms, pyplot=false)
+      EIS_df = get_EIS_from_EEC(EEC, f_range=get_f_range_from_triplet(f_range))
       EIS_df = EIS_preprocessing(EIS_df, EIS_preprocessing_control)
-      plot_bool && typical_plot_sim(SIM, EIS_df, "! EEC ($R1, $C1) ($R2, $C2, $alpha)")
+      DRT_actual = get_DRT(EIS_df, DRT_control)
+      plot_bool && typical_plot_sim(SIM, EIS_df, "! EEC $EEC_prms")
     elseif mode=="sim"
       EIS_df = ElChemTools.simple_run([SIM], pyplot=(plot_bool ? 1 : 0), 
         prms_names=prms_names, 
@@ -294,6 +303,7 @@ EIS_preprocessing_control = EIS_preprocessing_control(
       else
         plot_bool && typical_plot_exp(SIM, EIS_df) 
       end
+      DRT_actual = get_DRT(EIS_df, DRT_control)
     end
 
     if CAP_comparison
@@ -319,7 +329,7 @@ EIS_preprocessing_control = EIS_preprocessing_control(
 
 
     if export_file!=""
-      DRT_actual = get_DRT(EIS_df, DRT_control)
+      #DRT_actual = get_DRT(EIS_df, DRT_control)
       export_df_add_row!(export_df, DRT_actual, SIM, "h")
       if divide_R_peaks
         export_df_add_row!(export_df_R, DRT_actual, SIM, "Rx")
@@ -367,14 +377,14 @@ EIS_preprocessing_control = EIS_preprocessing_control(
 #         TODO !!!
 #       end
   end
-
+  
   if export_file!=""
     CSV.write(export_file, export_df, delim='\t', append=export_append)
     if divide_R_peaks > 0
       CSV.write("Rx_"*export_file, export_df_R, delim='\t', append=export_append)   
     end
   end
-  
+
   return true
 end
 
