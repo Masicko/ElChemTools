@@ -242,6 +242,10 @@ function test_DRT(SIM_list=Nothing;lambda=0.0,
                                     )
   )
 
+  if divide_R_peaks==true
+    divide_R_peaks = "gauss"
+  end
+
 
   if data_set=="POLY_OCV_test"
     bias=0.0
