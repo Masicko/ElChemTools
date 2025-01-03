@@ -232,7 +232,7 @@ function test_DRT(SIM_list=Nothing;lambda=0.0,
                   EEC_structure="", EEC_prms=[],
                   plot_bool=true, use_checknodes=false, plot_legend=true,
                   CAP_comparison=false, CAP_bottleneck_prm="rR", CAP_plot_CAP_CV=true, CAP_plot_num = 101,
-                  export_file="", export_append=true, testing=false, divide_R_peaks=false, R_peaks_plot_bool=false, export_in_f=false,
+                  export_file="", export_append=true, testing=false, divide_R_peaks="", R_peaks_plot_bool=false, export_in_f=false,
                   EIS_preprocessing_control = EIS_preprocessing_control(  
                                                     f_interval="auto", 
                                                     add_inductance=0,
@@ -331,7 +331,7 @@ function test_DRT(SIM_list=Nothing;lambda=0.0,
     if export_file!=""
       #DRT_actual = get_DRT(EIS_df, DRT_control)
       export_df_add_row!(export_df, DRT_actual, SIM, "h")
-      if divide_R_peaks
+      if (divide_R_peaks != "")
         export_df_add_row!(export_df_R, DRT_actual, SIM, "Rx")
       end
     end
@@ -380,7 +380,7 @@ function test_DRT(SIM_list=Nothing;lambda=0.0,
   
   if export_file!=""
     CSV.write(export_file, export_df, delim='\t', append=export_append)
-    if divide_R_peaks > 0
+    if divide_R_peaks != ""
       CSV.write("Rx_"*export_file, export_df_R, delim='\t', append=export_append)   
     end
   end

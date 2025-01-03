@@ -190,9 +190,12 @@ function find_peak_idxs(ddht, l_idx, r_idx)
         end
         i += 1
     end
-    @show peak_idxs
-    if length(peak_idxs) != 2
-        println("ERROR: peak_idxs $(peak_idxs) doesnt have 2 elements")
+    if length(peak_idxs) == 1
+        push!(peak_idxs, peak_idxs[1])
+    end
+    #@show peak_idxs
+    if length(peak_idxs) == 0
+        println("ERROR: peak_idxs $(peak_idxs) do not exist")
         return throw(Exception)
     end
     return peak_idxs
@@ -237,10 +240,16 @@ function fit_gaussian_peaks(gf::gaussian_fit_struct, func::Function; plot_bool =
             end
         end
         mean = idx_min
-        peak_radius = 2
-        peak_idxs = [max(mean - peak_radius, l_idx), min(mean + peak_radius, r_idx)]
+        min_peak_radius = 2
+        prop_peak_idxs = find_peak_idxs(ddht, l_idx, r_idx)
+        min_prop_peak_idxs = [
+            min(mean - min_peak_radius, prop_peak_idxs[1]), 
+            max(mean + min_peak_radius, prop_peak_idxs[2])
+        ]
+        peak_idxs = [max(min_prop_peak_idxs[1], l_idx), min(min_prop_peak_idxs[2], r_idx)]
         
-        # mean
+
+        # meanx
         push!(init_prms_loc, (mean))
         push!(bounds_tot, [l_idx, r_idx])
 
@@ -470,50 +479,55 @@ function divide_and_evaluate_R_peaks(DRT::DRT_struct)
     ht_o = DRT.h[division_starting_idx : ending_idx]
     t_o = DRT.tau_range[division_starting_idx : ending_idx]
     
-    #serialize("last_lt_ht.dat", [log.(10, t_o), ht_o])
-    DRT.R_peak_list = find_gaussian_peaks(t_o, ht_o, DRT.control)
+    serialize("last_lt_ht.dat", [log.(10, t_o), ht_o])
+    
+    if DRT.control.divide_R_peaks == "gauss"
+        DRT.R_peak_list = find_gaussian_peaks(t_o, ht_o, DRT.control)
+    elseif DRT.control.divide_R_peaks == "valley"
+
+        # main loop (with an assumption that in the low frequenceis there is no artefact)
+        active_idx = division_starting_idx
+        division_idxs = [division_starting_idx]
+        while active_idx < ending_idx - 1
+            if valley_check(active_idx, DRT.h) || hill_start_check(active_idx, DRT.h)
+                #@show valley_check(active_idx, DRT.h), hill_start_check(active_idx, DRT.h)
+                push!(division_idxs, active_idx+1)
+            end
+        active_idx += 1
+        end
+        push!(division_idxs, ending_idx)
+
+        if ending_idx < division_starting_idx
+            println("WARNING: starting idx is greater than ending idx in DRT!")
+            division_idxs = [division_starting_idx, length(DRT.h)]
+            return
+        end
 
 
-    # # main loop (with an assumption that in the low frequenceis there is no artefact)
-    # active_idx = division_starting_idx
-    # division_idxs = [division_starting_idx]
-    # while active_idx < ending_idx - 1
-    #     if valley_check(active_idx, DRT.h) || hill_start_check(active_idx, DRT.h)
-    #         #@show valley_check(active_idx, DRT.h), hill_start_check(active_idx, DRT.h)
-    #         push!(division_idxs, active_idx+1)
-    #     end
-    # active_idx += 1
-    # end
-    # push!(division_idxs, ending_idx)
-
-    # if ending_idx < division_starting_idx
-    #     println("WARNING: starting idx is greater than ending idx in DRT!")
-    #     division_idxs = [division_starting_idx, length(DRT.h)]
-    #     return
-    # end
-
-
-    # #@show division_idxs, [log(10, DRT.tau_range[idx]) for idx in division_idxs]
-    # # summing for R_list
-    # R_list = []
-    # for i in 1:length(division_idxs)-1
-    #     R = discrete_integrate(division_idxs[i], division_idxs[i+1] - 1, DRT.h)
-    #     h_max = -1.0
-    #     f_max = -1.0
-    #     for i in division_idxs[i] : division_idxs[i+1]
-    #         if DRT.h[i] > h_max 
-    #             h_max = DRT.h[i]
-    #             f_max = 1/(DRT.tau_range[i] * 2*pi)
-    #         end
-    #     end
-        
-    #     #h_max_check = maximum(DRT.h[division_idxs[i] : division_idxs[i+1]])
-    #     #@show h_max, h_max_check
-    #     push!(R_list, (f_max, R))
-    # end
-    # #@show R_list
-    # DRT.R_peak_list = R_list
-
+        #@show division_idxs, [log(10, DRT.tau_range[idx]) for idx in division_idxs]
+        # summing for R_list
+        R_list = []
+        for i in 1:length(division_idxs)-1
+            R = discrete_integrate(division_idxs[i], division_idxs[i+1] - 1, DRT.h)
+            h_max = -1.0
+            f_max = -1.0
+            for i in division_idxs[i] : division_idxs[i+1]
+                if DRT.h[i] > h_max 
+                    h_max = DRT.h[i]
+                    f_max = 1/(DRT.tau_range[i] * 2*pi)
+                end
+            end
+            
+            #h_max_check = maximum(DRT.h[division_idxs[i] : division_idxs[i+1]])
+            #@show h_max, h_max_check
+            push!(R_list, (f_max, R))
+        end
+        #@show R_list
+        DRT.R_peak_list = R_list
+    else
+        println("ERROR: divide_R_peaks = $(DRT.control.divide_R_peaks), which is not a valid option!")
+        throw(Exception)
+    end
 
     return
 end

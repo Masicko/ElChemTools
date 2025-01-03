@@ -24,7 +24,7 @@ const DRT_standard_figure = 33
   specified_f_range = Nothing
   k_Gold::Int64=10000
   alg::String="Tikhonov"
-  divide_R_peaks::Bool=false
+  divide_R_peaks::String=""
   R_peaks_plot_bool::Bool=false
   export_in_f::Bool=false
 end
@@ -363,7 +363,7 @@ function get_DRT(EIS_df::DataFrame, control::DRT_control_struct, debug_mode=fals
     EIS_new, tau_range, solution[1:N_tau], solution[N_tau+1], L_out, DataFrame(), [], control)
   
   evaluate_RC_peaks_from_DRT(DRT_out)
-  control.divide_R_peaks && divide_and_evaluate_R_peaks(DRT_out)
+  (control.divide_R_peaks != "") && divide_and_evaluate_R_peaks(DRT_out)
 
   # the following do NOT change DRT function, only changes peaks_df
   if control.peak_merge_tol > 0.0
