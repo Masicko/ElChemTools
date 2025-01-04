@@ -243,7 +243,7 @@ function test_DRT(SIM_list=Nothing;lambda=0.0,
   )
 
   if divide_R_peaks==true
-    divide_R_peaks = "gauss"
+    divide_R_peaks = "curv gauss"
   end
 
 
@@ -307,7 +307,7 @@ function test_DRT(SIM_list=Nothing;lambda=0.0,
       else
         plot_bool && typical_plot_exp(SIM, EIS_df) 
       end
-      DRT_actual = get_DRT(EIS_df, DRT_control)
+      #DRT_actual = get_DRT(EIS_df, DRT_control)
     end
 
     if CAP_comparison
@@ -333,7 +333,7 @@ function test_DRT(SIM_list=Nothing;lambda=0.0,
 
 
     if export_file!=""
-      #DRT_actual = get_DRT(EIS_df, DRT_control)
+      DRT_actual = get_DRT(EIS_df, DRT_control)
       export_df_add_row!(export_df, DRT_actual, SIM, "h")
       if (divide_R_peaks != "")
         export_df_add_row!(export_df_R, DRT_actual, SIM, "Rx")

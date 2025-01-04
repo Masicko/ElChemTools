@@ -4,7 +4,7 @@
 #   ---> 
 #
 #
-# find_gaussian_peaks(h_tau, tau) -> returns datastructure gaussian_fit => function, prms, number_of_peaks
+# obtain_gaussian_peaks(h_tau, tau) -> returns datastructure gaussian_fit => function, prms, number_of_peaks
 #
 #   TYJO ... fakt nevim, jak to rozumne charakterizovat. Jak urcit, ze jeden inflexni bod je ten, co chci (mezi kopcama) 
 #   a jiny inflexni bod nechci
@@ -145,6 +145,17 @@ function plot_divisions(gf::gaussian_fit_struct)
     end
 end
 
+function plot_divisions(ht, division_idxs)
+    plot_ht_and_func(ht, nothing, omit_f=true)
+    
+    grid(true)
+    if length(division_idxs) != 0
+        for idx in division_idxs
+            plot([idx, idx], [0, maximum(ht)], "black")
+        end
+    end
+end
+
 function plot_mimina(ht, div_idxs = nothing)
     figure(11) 
     plot(ht)
@@ -217,8 +228,6 @@ end
 function fit_gaussian_peaks(gf::gaussian_fit_struct, func::Function; plot_bool = false)
     init_prms_tot = Float64[]
     bounds_tot = []
-
-    plot_bool && plot_divisions(gf)
 
     #for i in 1:3
     for i in 1:gf.num_peaks
@@ -368,14 +377,8 @@ function get_Rt_info(gf::gaussian_fit_struct)
     return [z for z in zip(1.0 ./(10.0 .^peak_ts), peak_Rs)]
 end
 
-function find_gaussian_peaks(tau, h_tau, control::DRT_control_struct=DRT_control_struct())
-    plot_bool = control.R_peaks_plot_bool
-    #division_idxs = find_divisions_maximum(h_tau)
-    division_idxs = find_divisions_curv(h_tau)
-
-    #plot_mimina(h_tau, division_idxs)
+function obtain_gaussian_peaks(tau, h_tau, division_idxs, control::DRT_control_struct=DRT_control_struct())
     l_tau = log.(10, tau)
-
     gaussian_fit = gaussian_fit_struct(
             xdata = l_tau, 
             ydata = h_tau, 
@@ -383,21 +386,13 @@ function find_gaussian_peaks(tau, h_tau, control::DRT_control_struct=DRT_control
             division_idxs = division_idxs
     )
 
-    
-    if plot_bool
-        act_fig = PyPlot.gcf()
-        figure(11)
-    end
     # without tilt
-
-    fit_gaussian_peaks(gaussian_fit, (x, p) -> gaussian_peak(x, p[1], p[2], p[3]), plot_bool=plot_bool)
+    fit_gaussian_peaks(gaussian_fit, (x, p) -> gaussian_peak(x, p[1], p[2], p[3]), plot_bool=control.R_peaks_plot_bool)
     # with tilt
     #fit_gaussian_peaks(gaussian_fit, (x, p) -> gaussian_peak(x, p[1], p[2], p[3], p[4]))
 
     #subtract_peaks(gaussian_fit, [1,3])
     Rt_res = get_Rt_info(gaussian_fit)
-
-    plot_bool && figure(act_fig)
 
     return Rt_res
 end
@@ -421,51 +416,45 @@ function discrete_integrate(idx1, idx2, h_tau)
     return sum
 end
 
-function divide_and_evaluate_R_peaks(DRT::DRT_struct)
-    
-    function valley_check(idx, f)
-        valley_th = threshold
-        if (f[idx] >= f[idx+1] + valley_th) && (f[idx + 1] + valley_th <= f[idx + 2])
-            return true 
-        else
-            return false
-        end
-    end
 
-    function hill_start_check(idx, f)
-        if (abs(f[idx] - f[idx+1]) <= threshold) && (f[idx + 1] + threshold <= f[idx + 2])
-            return true 
-        else
-            return false
-        end
+function valley_check(idx, f, threshold)
+    valley_th = threshold
+    if (f[idx] >= f[idx+1] + valley_th) && (f[idx + 1] + valley_th <= f[idx + 2])
+        return true 
+    else
+        return false
     end
-    
-    function hill_end_check(idx, f)
-        if (f[idx] > f[idx+1] + threshold) && (abs(f[idx + 1] - f[idx + 2]) <= threshold)
-            return true 
-        else
-            return false
-        end
+end
+
+function hill_start_check(idx, f, threshold)
+    if (abs(f[idx] - f[idx+1]) <= threshold) && (f[idx + 1] + threshold <= f[idx + 2])
+        return true 
+    else
+        return false
     end
-    
-    threshold = maximum(DRT.h)/10000.0
+end
+
+function hill_end_check(idx, f, threshold)
+    if (f[idx] > f[idx+1] + threshold) && (abs(f[idx + 1] - f[idx + 2]) <= threshold)
+        return true 
+    else
+        return false
+    end
+end
+
+function crop_to_true_DRT(DRT, threshold)
     # first artefatic h decay
     division_starting_idx = 1
     while division_starting_idx + 1 <= length(DRT.h) && 
         DRT.h[division_starting_idx + 1] - DRT.h[division_starting_idx] < threshold
         division_starting_idx += 1
     end
-    if division_starting_idx == length(DRT.h) - 1
-        ## TODO
-    end
-
-
 
     # ending and check for artefacts
     if length(DRT.h) >= 3
         ending_idx = length(DRT.h) - 2
         while ending_idx >= 1 
-            if hill_end_check(ending_idx, DRT.h)
+            if hill_end_check(ending_idx, DRT.h, threshold)
                 ending_idx += 1
                 break
             end
@@ -475,60 +464,90 @@ function divide_and_evaluate_R_peaks(DRT::DRT_struct)
         ending_idx = length(DRT.h)
     end
 
-    # @show division_starting_idx, ending_idx
-    ht_o = DRT.h[division_starting_idx : ending_idx]
-    t_o = DRT.tau_range[division_starting_idx : ending_idx]
-    
-    serialize("last_lt_ht.dat", [log.(10, t_o), ht_o])
-    
-    if DRT.control.divide_R_peaks == "gauss"
-        DRT.R_peak_list = find_gaussian_peaks(t_o, ht_o, DRT.control)
-    elseif DRT.control.divide_R_peaks == "valley"
+    #@show division_starting_idx, ending_idx
 
-        # main loop (with an assumption that in the low frequenceis there is no artefact)
-        active_idx = division_starting_idx
-        division_idxs = [division_starting_idx]
-        while active_idx < ending_idx - 1
-            if valley_check(active_idx, DRT.h) || hill_start_check(active_idx, DRT.h)
-                #@show valley_check(active_idx, DRT.h), hill_start_check(active_idx, DRT.h)
-                push!(division_idxs, active_idx+1)
+    if ending_idx < division_starting_idx
+        println("WARNING: starting idx is greater than ending idx in DRT!")
+        return [], []
+    end
+
+    ht_cr = DRT.h[division_starting_idx : ending_idx]
+    t_cr = DRT.tau_range[division_starting_idx : ending_idx]
+    return ht_cr, t_cr
+end
+
+function find_divisions_valley(h_tau, threshold)
+    # main loop (with an assumption that in the low frequenceis there is no artefact)
+    active_idx = 1
+    ending_idx = length(h_tau)
+    division_idxs = [1]
+    while active_idx < ending_idx - 1
+        if valley_check(active_idx, h_tau, threshold) || hill_start_check(active_idx, h_tau, threshold)
+            #@show valley_check(active_idx, h_tau, threshold), hill_start_check(active_idx, h_tau, threshold)
+            push!(division_idxs, active_idx+1)
+        end
+    active_idx += 1
+    end
+    push!(division_idxs, ending_idx)
+    return division_idxs
+end
+
+
+function obtain_summed_peaks(tau, h_tau, division_idxs, control::DRT_control_struct=DRT_control_struct())
+    peak_list = []
+    for i in 1:length(division_idxs)-1
+        R = discrete_integrate(division_idxs[i], division_idxs[i+1] - 1, h_tau)
+        h_max = -1.0
+        f_max = -1.0
+        for i in division_idxs[i] : division_idxs[i+1]
+            if h_tau[i] > h_max 
+                h_max = h_tau[i]
+                f_max = 1/(tau[i])
             end
-        active_idx += 1
         end
-        push!(division_idxs, ending_idx)
+        push!(peak_list, (f_max, R))
+    end
+    return peak_list
+end
 
-        if ending_idx < division_starting_idx
-            println("WARNING: starting idx is greater than ending idx in DRT!")
-            division_idxs = [division_starting_idx, length(DRT.h)]
-            return
-        end
+function divide_and_evaluate_R_peaks(DRT::DRT_struct)
+    threshold = maximum(DRT.h)/10000.0
+    ht_cr, t_cr = crop_to_true_DRT(DRT, threshold)
+    if length(ht_cr) < 1
+        DRT.R_peak_list = []
+        return 
+    end
 
-
-        #@show division_idxs, [log(10, DRT.tau_range[idx]) for idx in division_idxs]
-        # summing for R_list
-        R_list = []
-        for i in 1:length(division_idxs)-1
-            R = discrete_integrate(division_idxs[i], division_idxs[i+1] - 1, DRT.h)
-            h_max = -1.0
-            f_max = -1.0
-            for i in division_idxs[i] : division_idxs[i+1]
-                if DRT.h[i] > h_max 
-                    h_max = DRT.h[i]
-                    f_max = 1/(DRT.tau_range[i] * 2*pi)
-                end
-            end
-            
-            #h_max_check = maximum(DRT.h[division_idxs[i] : division_idxs[i+1]])
-            #@show h_max, h_max_check
-            push!(R_list, (f_max, R))
-        end
-        #@show R_list
-        DRT.R_peak_list = R_list
+    plot_bool = DRT.control.R_peaks_plot_bool
+    if plot_bool
+        act_fig = PyPlot.gcf()
+        figure(11)
+    end
+    
+    #serialize("last_lt_ht.dat", [log.(10, t_cr), ht_cr])
+    
+    if occursin("valley",DRT.control.divide_R_peaks)
+        division_idxs = find_divisions_valley(ht_cr, threshold)
+    elseif occursin("curv", DRT.control.divide_R_peaks)
+        division_idxs = find_divisions_curv(ht_cr)
+        #division_idxs = find_divisions_maximum(ht_cr)
     else
-        println("ERROR: divide_R_peaks = $(DRT.control.divide_R_peaks), which is not a valid option!")
+        println("ERROR: divide_R_peaks-division = $(DRT.control.divide_R_peaks), which is not a valid option!")
         throw(Exception)
     end
 
+    plot_bool && plot_divisions(ht_cr, division_idxs)
+
+    if occursin("gauss", DRT.control.divide_R_peaks)
+        DRT.R_peak_list = obtain_gaussian_peaks(t_cr, ht_cr, division_idxs, DRT.control)
+    elseif occursin("sum", DRT.control.divide_R_peaks)
+        DRT.R_peak_list = obtain_summed_peaks(t_cr, ht_cr, division_idxs, DRT.control)
+    else
+        println("ERROR: divide_R_peaks-method = $(DRT.control.divide_R_peaks), which is not a valid option!")
+        throw(Exception)
+    end
+
+    plot_bool && figure(act_fig)
     return
 end
   

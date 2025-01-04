@@ -19,8 +19,20 @@
 #             where the factor 1.0 means it subtracts the inductance which comes out from gDRT analysis. 
 #             0.9 takes a little bit lower inductance.
 #      - export_in_f ... means the DRT spectrum h(tau) becames h(f)
-#      - divide_R_peaks = true ... the DRT spectrum is divaded by "2nd derivative division and gaussian peaks fitting"
-#            and than the R of each peak is evaluated and exported to a file with prefix "Rx..."
+#
+#  DRT Peak analysis:      
+#      - divide_R_peaks = "<DIV> <METHOD>" ... the DRT spectrum is divaded by <DIV> algoritm to segments 
+#                    each containing (hopefully :) ) one peak and then the total resistance is divided 
+#                    into "peaks" by specified <METHOD>
+#             <DIV>  = "valley" -> separators are placed in the valley (local minima of h(t))
+#                    = "curv"   -> separators are found by curvature (2nd derivative) of h(t)
+#             <METHOD> = "sum"  -> h(t) is summed withing each "peak segment" nad frequency f is 
+#                                  at the highest point of a segment h(t)
+#                      = "gauss"-> gaussian peaks are fitted to h(t) and then the h(t) is 
+#                                  redistributed for each "t" to appropriate "peaks" according to the ratio
+#                                  of present peaks in the point "t",
+#                                  frequency f is the mean of the gaussian peak
+#            and than the f and R of each peak is evaluated and exported to a file with prefix "Rx..."
 #      - R_peaks_plot_bool = true ... the division and gaussian peak fitting is shown
 ##############################################################
 using ElChemTools
