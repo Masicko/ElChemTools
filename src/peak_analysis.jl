@@ -77,9 +77,7 @@ end
 
 function find_divisions_maximum(h_tau)
     tol = maximum(h_tau)*1e-8
-    dht = my_deriv(h_tau)
-    ddht = my_deriv(dht)
-    ddht = [1.0e-6, ddht..., 1.0e-6]
+    ddht = my_2nd_der(h_tau)
 
     div_idxs = []
     i = 2
@@ -100,22 +98,26 @@ function find_divisions_maximum(h_tau)
     return div_idxs  
 end
 
+function my_2nd_der(a)
+    res = my_deriv(my_deriv(a))
+    res = [res[1]/2.0, res..., res[2]/2.0]
+    res = map(x -> ( abs(x) < 1.0e-10 ? 0.0 : x), res)
+    return res
+end
+
 function find_divisions_curv(h_tau)
-    tol = maximum(h_tau)*1e-8
-    dht = my_deriv(h_tau)
-    ddht = my_deriv(dht)
-    ddht = [1.0e-6, ddht..., 1.0e-6]
+    ddht = my_2nd_der(h_tau)
     div_idxs = [1]
     i = 1 
 
     previous_inflex_id = -1
 
     while i <= length(ddht)-1
-        if ddht[i] <= 0 && ddht[i+1] >= 0
+        if ddht[i] < 0 && ddht[i+1] > 0
             previous_inflex_id = i
         end
 
-        if ddht[i] >= 0 && ddht[i+1] <= 0 && previous_inflex_id > 0
+        if ddht[i] > 0 && ddht[i+1] < 0 && previous_inflex_id > 0
             #@show " >> ", previous_inflex_id, i+1
             push!(div_idxs, Int64(round((i + 1 + previous_inflex_id)/2)))
             i += 1
@@ -235,8 +237,7 @@ function fit_gaussian_peaks(gf::gaussian_fit_struct, func::Function; plot_bool =
         l_idx = gf.division_idxs[i]
         r_idx = gf.division_idxs[i+1]
         
-        ddht = my_deriv(my_deriv(gf.ydata))
-        ddht = [1.0e-5, ddht..., 1.0e-5]
+        ddht = my_2nd_der(gf.ydata)
         
         plot_bool && plot(collect(1:length(ddht)), ddht)
 
@@ -511,8 +512,10 @@ function obtain_summed_peaks(tau, h_tau, division_idxs, control::DRT_control_str
 end
 
 function divide_and_evaluate_R_peaks(DRT::DRT_struct)
-    threshold = maximum(DRT.h)/10000.0
-    ht_cr, t_cr = crop_to_true_DRT(DRT, threshold)
+    overall_threshold = maximum(DRT.h)*1e-5
+    ht_cr, t_cr = crop_to_true_DRT(DRT, overall_threshold)
+    threshold = maximum(ht_cr)/10000.0
+    
     if length(ht_cr) < 1
         DRT.R_peak_list = []
         return 
