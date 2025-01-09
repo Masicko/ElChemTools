@@ -187,6 +187,11 @@ function quadratic_template(T, A, B, C)
   return A*((T-973.15)/50)^2 + B*((T-973.15)/50) + C
 end
 
+function exponential_interpolation(x, a, b, A, B)
+  E = log(A/B)/(a-b)
+  C = A/exp(E*a)
+  return C*exp(E*x)
+end
 
 function EIS_get_checknodes_geometrical(start_n, end_n, n_fac)
     # frequency nodes to compare

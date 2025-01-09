@@ -224,7 +224,7 @@ end
 
 
 function test_DRT(SIM_list=Nothing;lambda=0.0, 
-                  mode="EEC", TC=800, pO2=80, bias=0.0, R_ohm=1, R1=1, C1=0.001, R2=1, C2=0.0001, alpha=1, 
+                  mode="EEC", TC=800, pO2=80, bias=0.0, 
                   prms_names=[], prms_values=[], backward_check=true, draw_semicircles=false, plot_option="Nyq DRT Bode RC", 
                   f_range=EIS_get_shared_f_range(), data_set="examples/default_EIS_example.z", physical_model_name=Nothing,
                   tau_min_fac=10, tau_max_fac=10, tau_range_fac=2, k_Gold=-10, alg="Tikhonov",
@@ -244,6 +244,8 @@ function test_DRT(SIM_list=Nothing;lambda=0.0,
 
   if divide_R_peaks==true
     divide_R_peaks = "curv gauss"
+  elseif divide_R_peaks==false
+    divide_R_peaks = ""
   end
 
 

@@ -24,6 +24,7 @@
 #      - divide_R_peaks = "<DIV> <METHOD>" ... the DRT spectrum is divaded by <DIV> algoritm to segments 
 #                    each containing (hopefully :) ) one peak and then the total resistance is divided 
 #                    into "peaks" by specified <METHOD>
+#                    (and default is = "" -> do nothing)
 #             <DIV>  = "valley" -> separators are placed in the valley (local minima of h(t))
 #                    = "curv"   -> separators are found by curvature (2nd derivative) of h(t)
 #             <METHOD> = "sum"  -> h(t) is summed withing each "peak segment" nad frequency f is 

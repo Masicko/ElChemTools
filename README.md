@@ -24,7 +24,11 @@ A toolkit for processing electrochemistry data or running FVM simulations using 
   
 ## Instalation
 
-The package can be then installed via
+If you do not have a python installed on you system and you want julia to take care of it (and install its own python), write
+```julialang
+ENV["PYTHON"] = ""
+```
+prior to the adding the package. Then the package can be then installed via
 ```julialang
 ]
 add https://github.com/Masicko/ElChemTools.jl

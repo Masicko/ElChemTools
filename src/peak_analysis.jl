@@ -371,10 +371,10 @@ function get_Rt_info(gf::gaussian_fit_struct)
     npp = num_of_prms_per_peak(gf)
     for peak_num in 1:gf.num_peaks
         mean = gf.prms[Int((peak_num -1)*npp + 1)]
-        push!(peak_ts, gf.xdata[Int(round(mean))])
+        mean_tau = exponential_interpolation(mean, 1, length(gf.xdata), 10.0^gf.xdata[1], 10.0^gf.xdata[end])        
+        push!(peak_ts, mean_tau)
     end
-
-    return [z for z in zip(1.0 ./(10.0 .^peak_ts), peak_Rs)]
+    return [z for z in zip(1.0 ./(2 .*pi.* peak_ts), peak_Rs)]
 end
 
 function obtain_gaussian_peaks(tau, h_tau, division_idxs, control::DRT_control_struct=DRT_control_struct())
@@ -502,7 +502,7 @@ function obtain_summed_peaks(tau, h_tau, division_idxs, control::DRT_control_str
         for i in division_idxs[i] : division_idxs[i+1]
             if h_tau[i] > h_max 
                 h_max = h_tau[i]
-                f_max = 1/(tau[i])
+                f_max = 1/(2*pi*tau[i])
             end
         end
         push!(peak_list, (f_max, R))
@@ -532,7 +532,7 @@ function divide_and_evaluate_R_peaks(DRT::DRT_struct)
         division_idxs = find_divisions_curv(ht_cr)
         #division_idxs = find_divisions_maximum(ht_cr)
     else
-        println("ERROR: divide_R_peaks-division = $(DRT.control.divide_R_peaks), which is not a valid option!")
+        println("ERROR: divide_R_peaks-division = \"$(DRT.control.divide_R_peaks)\", which is not a valid option!")
         throw(Exception)
     end
 
@@ -543,7 +543,7 @@ function divide_and_evaluate_R_peaks(DRT::DRT_struct)
     elseif occursin("sum", DRT.control.divide_R_peaks)
         DRT.R_peak_list = obtain_summed_peaks(t_cr, ht_cr, division_idxs, DRT.control)
     else
-        println("ERROR: divide_R_peaks-method = $(DRT.control.divide_R_peaks), which is not a valid option!")
+        println("ERROR: divide_R_peaks-method = \"$(DRT.control.divide_R_peaks)\", which is not a valid option!")
         throw(Exception)
     end
 
